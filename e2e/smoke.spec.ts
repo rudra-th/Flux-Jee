@@ -109,6 +109,11 @@ test('every page and mode route renders (no 404 bounce)', async ({ page }) => {
   await page.getByRole('button', { name: 'Adaptive Mode', exact: true }).click()
   await expect(page).toHaveURL(/\/practice\/adaptive/)
 
+  // Footer "Made by Rudra" tag links to GitHub.
+  const madeBy = page.getByRole('link', { name: /Made by Rudra/ })
+  await expect(madeBy).toBeVisible()
+  await expect(madeBy).toHaveAttribute('href', 'https://github.com/rudra-th')
+
   expect(pageErrors).toEqual([])
 })
 
@@ -160,6 +165,55 @@ test('search finds questions after seeding', async ({ page }) => {
   await expect(counter).toBeVisible()
   const count = parseInt((await counter.textContent()) ?? '0', 10)
   expect(count).toBeGreaterThan(0)
+
+  expect(pageErrors).toEqual([])
+})
+
+test('flashcards generate from mistakes', async ({ page }) => {
+  const pageErrors: string[] = []
+  page.on('pageerror', (e) => pageErrors.push(e.message))
+
+  await page.goto('/')
+  await waitForHome(page)
+
+  // Guarantee a wrong-answer record so the generator has material to work with.
+  await page.evaluate(async () => {
+    const req = indexedDB.open('jee-arena')
+    const open = new Promise<void>((resolve, reject) => {
+      req.onsuccess = () => resolve()
+      req.onerror = () => reject(req.error)
+    })
+    await open
+    const read = req.result.transaction('questions', 'readonly')
+    const all = await new Promise<any[]>((resolve, reject) => {
+      const r = read.objectStore('questions').getAll()
+      r.onsuccess = () => resolve(r.result)
+      r.onerror = () => reject(r.error)
+    })
+    const q = all.find((x) => x.solution && x.solution.concept) ?? all[0]
+    const write = req.result.transaction('answerRecords', 'readwrite')
+    write.objectStore('answerRecords').put({
+      questionId: q.id,
+      everCorrect: false,
+      everWrong: true,
+      everGuessed: false,
+      everSkipped: false,
+      accuracy: 0,
+      attempts: 1,
+      correctAttempts: 0,
+      totalTime: 10,
+      lastAttemptedAt: new Date().toISOString(),
+      lastResult: 'wrong',
+    })
+    await new Promise<void>((resolve) => {
+      write.oncomplete = () => resolve()
+    })
+  })
+
+  await page.goto('/flashcards')
+  await expect(page.getByRole('heading', { name: 'Flashcards' })).toBeVisible()
+  await page.getByRole('button', { name: 'Generate from mistakes' }).first().click()
+  await expect(page.getByRole('button', { name: 'Show Answer' })).toBeVisible({ timeout: 30_000 })
 
   expect(pageErrors).toEqual([])
 })

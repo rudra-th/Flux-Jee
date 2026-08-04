@@ -7,7 +7,7 @@ export async function generateFlashcardsFromQuestions(questionIds: string[]): Pr
   for (const id of questionIds) {
     const q = await db.questions.get(id)
     if (!q) continue
-    if (await db.flashcards.where('questionId').equals(id).count()) continue
+    if (await db.flashcards.filter((c) => c.questionId === id).count()) continue
 
     const cards: Omit<Flashcard, 'id' | 'createdAt'>[] = []
 
@@ -21,7 +21,7 @@ export async function generateFlashcardsFromQuestions(questionIds: string[]): Pr
         back: q.solution.concept,
         tags: [q.chapter, q.microTopic],
         box: 1,
-        nextReviewAt: new Date(Date.now() + 86400000).toISOString(),
+        nextReviewAt: new Date().toISOString(),
         repetitions: 0,
       })
       created++
@@ -37,7 +37,7 @@ export async function generateFlashcardsFromQuestions(questionIds: string[]): Pr
         back: q.solution.short,
         tags: [q.chapter, q.microTopic],
         box: 1,
-        nextReviewAt: new Date(Date.now() + 86400000).toISOString(),
+        nextReviewAt: new Date().toISOString(),
         repetitions: 0,
       })
       created++
@@ -59,7 +59,7 @@ export async function generateFormulaCards(subject: 'physics' | 'chemistry' | 'm
   const qs = questions.filter((q) => q.solution.short)
   let created = 0
   for (const q of qs) {
-    const existing = await db.flashcards.where('questionId').equals(q.id).count()
+    const existing = await db.flashcards.filter((c) => c.questionId === q.id).count()
     if (existing) continue
     await db.flashcards.put({
       id: randomId('fc-'),
