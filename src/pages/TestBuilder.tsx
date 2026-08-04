@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { Card, CardHeader, Button, Switch, Tabs, Chip, Select, Field, Input, Icon, Badge, type IconName } from '@/components/ui'
 import { SUBJECTS } from '@/constants/syllabus'
 import { EXAMS } from '@/constants/exams'
@@ -74,10 +75,10 @@ export default function TestBuilder() {
   const pushToast = useUIStore((s) => s.pushToast)
   const startTest = useTestStore((s) => s.startTest)
 
-  const initialMode = resolveModePath(params.get('mode') ?? modeParam)
-  const [mode, setMode] = useState<TestModeId>(initialMode)
+  const modeFromUrl = resolveModePath(params.get('mode') ?? modeParam)
+  const [mode, setMode] = useState<TestModeId>(modeFromUrl)
   const [state, setState] = useState<BuilderState>(() => {
-    const s = initialState(initialMode)
+    const s = initialState(modeFromUrl)
     const subjectParam = params.get('subject') as SubjectId | null
     if (subjectParam && SUBJECTS.some((sub) => sub.id === subjectParam)) {
       s.subjects = [subjectParam]
@@ -94,6 +95,13 @@ export default function TestBuilder() {
   const [building, setBuilding] = useState(false)
 
   const update = (patch: Partial<BuilderState>) => setState((s) => ({ ...s, ...patch }))
+
+  useEffect(() => {
+    if (modeFromUrl !== mode) {
+      setMode(modeFromUrl)
+      setState((s) => ({ ...initialState(modeFromUrl), subjects: s.subjects }))
+    }
+  }, [modeFromUrl])
 
   const selectedSubject = useMemo(
     () => SUBJECTS.find((s) => s.id === state.subjects[0]) ?? SUBJECTS[0]!,
@@ -197,9 +205,28 @@ export default function TestBuilder() {
     if (meta) navigate(meta.path, { replace: true })
   }
 
+  const modeMeta = useMemo(() => TEST_MODES.find((m) => m.id === mode) ?? TEST_MODES[0]!, [mode])
+
   return (
     <div>
-      <PageHeader title="Test Builder" subtitle="Build your perfect practice session" />
+      <motion.div
+        key={modeMeta.id}
+        initial={{ opacity: 0, x: -8 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+      >
+        <PageHeader
+          title={modeMeta.name}
+          subtitle={modeMeta.description}
+          action={
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface2 px-3 py-1.5 text-xs font-semibold text-text2">
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: modeMeta.color }} />
+              <Icon name={modeMeta.icon as IconName} size={14} />
+              {modeMeta.badge ?? 'Mode'}
+            </div>
+          }
+        />
+      </motion.div>
 
       {/* Mode presets */}
       <div className="mb-5 grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">

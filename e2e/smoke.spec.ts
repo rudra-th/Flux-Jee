@@ -58,20 +58,20 @@ test('every page and mode route renders (no 404 bounce)', async ({ page }) => {
     ['/leaderboard', 'Leaderboard'],
     ['/settings', 'Settings'],
     ['/practice', 'Practice'],
-    ['/test', 'Test Builder'],
-    ['/test/custom', 'Test Builder'],
-    ['/test/full', 'Test Builder'],
-    ['/test/chapter', 'Test Builder'],
-    ['/test/subject', 'Test Builder'],
-    ['/test/topic', 'Test Builder'],
-    ['/practice/mixed', 'Test Builder'],
-    ['/practice/daily', 'Test Builder'],
-    ['/practice/marathon', 'Test Builder'],
-    ['/practice/speed', 'Test Builder'],
-    ['/practice/revision', 'Test Builder'],
-    ['/practice/pyq', 'Test Builder'],
-    ['/practice/adaptive', 'Test Builder'],
-    ['/practice/weak', 'Test Builder'],
+    ['/test', 'Custom Test'],
+    ['/test/custom', 'Custom Test'],
+    ['/test/full', 'Full Test'],
+    ['/test/chapter', 'Chapter Test'],
+    ['/test/subject', 'Subject Test'],
+    ['/test/topic', 'Topic Test'],
+    ['/practice/mixed', 'Mixed Practice'],
+    ['/practice/daily', 'Daily Challenge'],
+    ['/practice/marathon', 'Marathon Mode'],
+    ['/practice/speed', 'Speed Test'],
+    ['/practice/revision', 'Revision Mode'],
+    ['/practice/pyq', 'PYQ Mode'],
+    ['/practice/adaptive', 'Adaptive Mode'],
+    ['/practice/weak', 'Weak Chapter Mode'],
     ['/practice/wrong', 'Mistake Notebook'],
     ['/practice/bookmarked', 'Bookmarks'],
   ]
@@ -83,7 +83,7 @@ test('every page and mode route renders (no 404 bounce)', async ({ page }) => {
 
   // Weak-chapter deep link should pre-select the chapter.
   await page.goto('/test/chapter?subject=physics&chapter=Units%20and%20Measurements')
-  await heading('Test Builder')
+  await heading('Chapter Test')
   await page.getByRole('tab', { name: 'Chapters' }).click()
   await expect(page.getByText('1 selected')).toBeVisible()
 
@@ -94,6 +94,21 @@ test('every page and mode route renders (no 404 bounce)', async ({ page }) => {
   await heading('Question Search')
   await page.getByRole('link', { name: 'Leaderboard' }).click()
   await heading('Leaderboard')
+
+  // Switching between practice modes via the sidebar must update the mode
+  // header (regression: state used to stay stale on same-shaped routes).
+  await page.getByRole('link', { name: 'Daily Challenge' }).click()
+  await expect(page).toHaveURL(/\/practice\/daily/)
+  await heading('Daily Challenge')
+  await page.getByRole('link', { name: 'Marathon' }).click()
+  await expect(page).toHaveURL(/\/practice\/marathon/)
+  await heading('Marathon Mode')
+  await page.getByRole('link', { name: 'Speed Test' }).click()
+  await expect(page).toHaveURL(/\/practice\/speed/)
+  await heading('Speed Test')
+  await page.getByRole('link', { name: 'Full Test' }).click()
+  await expect(page).toHaveURL(/\/test\/full/)
+  await heading('Full Test')
 
   // Home hero buttons.
   await page.goto('/')
@@ -114,6 +129,11 @@ test('every page and mode route renders (no 404 bounce)', async ({ page }) => {
   await expect(madeBy).toBeVisible()
   await expect(madeBy).toHaveAttribute('href', 'https://github.com/rudra-th')
 
+  // Global "/" shortcut opens search, as advertised in the TopBar.
+  await page.keyboard.press('/')
+  await expect(page).toHaveURL(/\/search/)
+  await heading('Question Search')
+
   expect(pageErrors).toEqual([])
 })
 
@@ -122,7 +142,7 @@ test('full test round trip: build, run, answer, submit, result', async ({ page }
   page.on('pageerror', (e) => pageErrors.push(e.message))
 
   await page.goto('/test/full')
-  await expect(page.getByRole('heading', { name: 'Test Builder' })).toBeVisible({ timeout: 150_000 })
+  await expect(page.getByRole('heading', { name: 'Full Test' })).toBeVisible({ timeout: 150_000 })
   await expect(page).toHaveURL(/\/test\/full/)
 
   await page.getByRole('button', { name: 'Start Test' }).click()

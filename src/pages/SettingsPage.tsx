@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, CardHeader, Button, Switch, Select, Field, Input, Icon, SegmentedControl } from '@/components/ui'
+import { Card, CardHeader, Button, Switch, Select, Field, Input, Icon, SegmentedControl, Modal } from '@/components/ui'
 import { useSettingsStore, applyTheme } from '@/stores/settingsStore'
 import { useUIStore } from '@/stores/uiStore'
 import type { ThemeId } from '@/types/settings'
@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const pushToast = useUIStore((s) => s.pushToast)
 
   const [busy, setBusy] = useState<'seed' | 'import' | 'reset' | null>(null)
+  const [confirmReset, setConfirmReset] = useState(false)
 
   const apply = (patch: Parameters<typeof set>[0]) => {
     set(patch)
@@ -49,6 +50,7 @@ export default function SettingsPage() {
   }
 
   const handleReset = async () => {
+    setConfirmReset(false)
     setBusy('reset')
     try {
       await resetDatabase()
@@ -166,12 +168,34 @@ export default function SettingsPage() {
                 <p className="text-sm font-medium text-danger">Reset Everything</p>
                 <p className="text-[11px] text-text3">Wipe database, progress and settings</p>
               </div>
-              <Button size="sm" variant="danger" loading={busy === 'reset'} onClick={() => void handleReset()}>
+              <Button size="sm" variant="danger" loading={busy === 'reset'} onClick={() => setConfirmReset(true)}>
                 <Icon name="trash" size={14} /> Reset
               </Button>
             </div>
           </div>
         </Card>
+
+        <Modal
+          open={confirmReset}
+          onClose={() => setConfirmReset(false)}
+          title="Reset everything?"
+          subtitle="This wipes the question bank, all your test history, mistakes, flashcards and settings. This cannot be undone."
+          size="sm"
+          footer={
+            <>
+              <Button variant="outline" onClick={() => setConfirmReset(false)}>
+                Cancel
+              </Button>
+              <Button variant="danger" loading={busy === 'reset'} onClick={() => void handleReset()}>
+                <Icon name="trash" size={14} /> Yes, reset
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm text-text2">
+            You will need to reseed the question bank afterwards. Are you sure?
+          </p>
+        </Modal>
 
         <p className="px-1 text-center text-[11px] text-text3">
           JEE Arena v0.1.0 · Data stored locally in your browser · {settings.offlineMode ? 'Offline ready' : 'Online only'}

@@ -90,20 +90,35 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                   onClick={onNavigate}
                   className={({ isActive }) =>
                     cn(
-                      'group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors',
+                      'group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors',
                       isActive
-                        ? 'bg-primary/10 text-primary'
+                        ? 'text-primary'
                         : 'text-text2 hover:bg-surface2 hover:text-text',
                     )
                   }
                 >
-                  <Icon name={item.icon} size={17} className="shrink-0" />
-                  <span className="flex-1 truncate">{item.label}</span>
-                  {item.badge ? (
-                    <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-accent">
-                      {item.badge}
-                    </span>
-                  ) : null}
+                  {({ isActive }) => (
+                    <>
+                      {isActive && (
+                        <motion.span
+                          layoutId="sidebar-active-pill"
+                          className="absolute inset-0 rounded-lg bg-primary/10"
+                          transition={{ type: 'spring', bounce: 0.18, duration: 0.5 }}
+                        />
+                      )}
+                      <Icon
+                        name={item.icon}
+                        size={17}
+                        className="relative shrink-0 transition-transform duration-200 group-hover:scale-110"
+                      />
+                      <span className="relative flex-1 truncate">{item.label}</span>
+                      {item.badge ? (
+                        <span className="relative rounded bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-accent">
+                          {item.badge}
+                        </span>
+                      ) : null}
+                    </>
+                  )}
                 </NavLink>
               ))}
             </div>
