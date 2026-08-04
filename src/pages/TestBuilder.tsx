@@ -1,16 +1,18 @@
 import { useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Card, CardHeader, Button, Switch, Tabs, Chip, Select, Field, Input, Icon, Badge, type IconName } from '@/components/ui'
 import { SUBJECTS } from '@/constants/syllabus'
 import { EXAMS } from '@/constants/exams'
 import { QUESTION_TYPES } from '@/constants/exams'
 import type { Difficulty, ExamId, QuestionTypeId, SubjectId } from '@/types/core'
 import type { TestModeId } from '@/types/core'
+import type { TestConfig } from '@/types/test'
 import { buildTest } from '@/engines/testBuilder'
+import { buildAdaptiveTest } from '@/engines/adaptive/engine'
 import { useTestStore } from '@/stores/testStore'
 import { useUIStore } from '@/stores/uiStore'
 import { cn } from '@/utils/cn'
-import { TEST_MODES } from '@/constants/modes'
+import { TEST_MODES, resolveModePath } from '@/constants/modes'
 import { PageHeader } from '@/components/layout/AppShell'
 
 const DIFFICULTIES: Array<{ value: Difficulty; label: string }> = [
@@ -40,34 +42,54 @@ interface BuilderState {
 }
 
 function initialState(mode: TestModeId): BuilderState {
+  const practiceExam =
+    mode === 'chapter' ||
+    mode === 'topic' ||
+    mode === 'mixed-practice' ||
+    mode === 'revision' ||
+    mode === 'weak-chapter'
   return {
     name: TEST_MODES.find((m) => m.id === mode)?.name ?? 'Custom Test',
     mode,
-    exam: mode === 'chapter' ? 'practice' : mode === 'topic' ? 'practice' : 'jee-main',
+    exam: practiceExam ? 'practice' : 'jee-main',
     subjects: ['physics', 'chemistry', 'mathematics'],
     selectedChapters: [],
     selectedTopics: [],
     difficulties: [1, 2, 3, 4, 5],
     questionTypes: ['single', 'integer'],
-    totalQuestions: 30,
-    timeLimitMinutes: 180,
+    totalQuestions: mode === 'daily-challenge' ? 10 : mode === 'marathon' ? 60 : mode === 'speed' ? 20 : 30,
+    timeLimitMinutes: mode === 'daily-challenge' ? 15 : mode === 'marathon' ? 120 : mode === 'speed' ? 10 : 180,
     negativeMarking: mode !== 'revision',
     shuffleQuestions: true,
     shuffleOptions: true,
-    allowPause: true,
+    allowPause: mode !== 'speed',
     years: [2019, 2020, 2021, 2022, 2023, 2024],
   }
 }
 
 export default function TestBuilder() {
-  const [params, setParams] = useSearchParams()
+  const { mode: modeParam } = useParams()
+  const [params] = useSearchParams()
   const navigate = useNavigate()
   const pushToast = useUIStore((s) => s.pushToast)
   const startTest = useTestStore((s) => s.startTest)
 
-  const initialMode = (params.get('mode') as TestModeId) ?? 'custom'
+  const initialMode = resolveModePath(params.get('mode') ?? modeParam)
   const [mode, setMode] = useState<TestModeId>(initialMode)
-  const [state, setState] = useState<BuilderState>(() => initialState(initialMode))
+  const [state, setState] = useState<BuilderState>(() => {
+    const s = initialState(initialMode)
+    const subjectParam = params.get('subject') as SubjectId | null
+    if (subjectParam && SUBJECTS.some((sub) => sub.id === subjectParam)) {
+      s.subjects = [subjectParam]
+    }
+    const chapterParam = params.get('chapter')
+    if (chapterParam) {
+      const sub = SUBJECTS.find((x) => x.id === (subjectParam ?? s.subjects[0]))
+      const ch = sub?.chapters.find((c) => c.name === chapterParam)
+      if (ch) s.selectedChapters = [ch.id]
+    }
+    return s
+  })
   const [activeTab, setActiveTab] = useState<'subjects' | 'chapters' | 'options'>('subjects')
   const [building, setBuilding] = useState(false)
 
@@ -117,28 +139,33 @@ export default function TestBuilder() {
     }
     setBuilding(true)
     try {
-      const chapterNames = state.selectedChapters
-        .map((id) => selectedSubject?.chapters.find((c) => c.id === id)?.name)
-        .filter(Boolean) as string[]
-      const config = await buildTest({
-        name: state.name,
-        mode: state.mode,
-        exam: state.exam,
-        subjects: state.subjects,
-        chapters: chapterNames,
-        microTopics: state.selectedTopics,
-        difficulties: state.difficulties,
-        questionTypes: state.questionTypes,
-        totalQuestions: state.totalQuestions,
-        timeLimitSeconds: state.timeLimitMinutes * 60,
-        negativeMarking: state.negativeMarking,
-        shuffleQuestions: state.shuffleQuestions,
-        shuffleOptions: state.shuffleOptions,
-        allowPause: state.allowPause,
-        years: state.years,
-        autoSubmit: true,
-        seed: Date.now(),
-      })
+      let config: TestConfig
+      if (state.mode === 'adaptive') {
+        config = await buildAdaptiveTest(state.totalQuestions)
+      } else {
+        const chapterNames = state.selectedChapters
+          .map((id) => selectedSubject?.chapters.find((c) => c.id === id)?.name)
+          .filter(Boolean) as string[]
+        config = await buildTest({
+          name: state.name,
+          mode: state.mode,
+          exam: state.exam,
+          subjects: state.subjects,
+          chapters: chapterNames,
+          microTopics: state.selectedTopics,
+          difficulties: state.difficulties,
+          questionTypes: state.questionTypes,
+          totalQuestions: state.totalQuestions,
+          timeLimitSeconds: state.timeLimitMinutes * 60,
+          negativeMarking: state.negativeMarking,
+          shuffleQuestions: state.shuffleQuestions,
+          shuffleOptions: state.shuffleOptions,
+          allowPause: state.allowPause,
+          years: state.years,
+          autoSubmit: true,
+          seed: Date.now(),
+        })
+      }
       startTest(config)
       navigate(`/run/${config.id}`)
     } catch (err) {
@@ -166,7 +193,8 @@ export default function TestBuilder() {
       ...initialState(m),
       subjects: s.subjects,
     }))
-    setParams({ mode: m }, { replace: true })
+    const meta = TEST_MODES.find((x) => x.id === m)
+    if (meta) navigate(meta.path, { replace: true })
   }
 
   return (

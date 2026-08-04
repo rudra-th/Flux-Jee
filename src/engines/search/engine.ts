@@ -51,7 +51,12 @@ export async function buildSearchIndex(): Promise<Fuse<IndexedQuestion>> {
       concept: q.solution.concept ?? '',
     }))
     fuse = new Fuse(cache, options)
-    return fuse
+    if (cache.length === 0) {
+      // Don't cache an empty index — the DB may be seeded afterwards.
+      fuse = null
+      buildPromise = null
+    }
+    return fuse ?? new Fuse([], options)
   })()
 
   return buildPromise

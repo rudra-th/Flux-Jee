@@ -140,6 +140,21 @@ export const TEST_MODES: TestModeMeta[] = [
   },
 ]
 
+/** Short URL path segments mapped to their canonical TestModeId. */
+const MODE_PATH_ALIASES: Record<string, TestModeId> = {
+  mixed: 'mixed-practice',
+  daily: 'daily-challenge',
+  weak: 'weak-chapter',
+  wrong: 'wrong-questions',
+}
+
+/** Resolve a URL path segment (e.g. "daily") into a valid TestModeId. */
+export function resolveModePath(raw: string | null | undefined): TestModeId {
+  if (!raw) return 'custom'
+  const candidate = (MODE_PATH_ALIASES[raw] ?? raw) as TestModeId
+  return TEST_MODES.some((m) => m.id === candidate) ? candidate : 'custom'
+}
+
 export const CHAPTER_COUNT = 64
 export const TOTAL_TOPICS = 186
 

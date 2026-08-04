@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Card, CardHeader, Button, Select, Input, Field, Icon } from '@/components/ui'
 import { SUBJECTS, type Subject } from '@/constants/syllabus'
 import type { SubjectId } from '@/types/core'
@@ -10,12 +10,14 @@ import { cn } from '@/utils/cn'
 import { PageHeader } from '@/components/layout/AppShell'
 
 export default function PracticePage() {
+  const { mode: modeParam } = useParams()
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const startTest = useTestStore((s) => s.startTest)
   const pushToast = useUIStore((s) => s.pushToast)
 
-  const mode = (params.get('mode') ?? 'chapter') as 'chapter' | 'subject' | 'topic'
+  const rawMode = params.get('mode') ?? modeParam ?? 'chapter'
+  const mode = (rawMode === 'subject' || rawMode === 'topic' || rawMode === 'chapter' ? rawMode : 'chapter') as 'chapter' | 'subject' | 'topic'
   const subjectId = (params.get('subject') as SubjectId) ?? 'physics'
   const [subject, setSubject] = useState<SubjectId>(subjectId)
   const [chapterId, setChapterId] = useState<string>('')

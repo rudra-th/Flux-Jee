@@ -7,6 +7,7 @@ import { useSettingsStore, applyTheme } from '@/stores/settingsStore'
 import HomePage from '@/pages/HomePage'
 import TestBuilder from '@/pages/TestBuilder'
 import PracticePage from '@/pages/PracticePage'
+import PracticeModeRoute from '@/pages/PracticeModeRoute'
 import TestRunner from '@/pages/TestRunner'
 import TestResult from '@/pages/TestResult'
 import AnalyticsPage from '@/pages/AnalyticsPage'
@@ -16,6 +17,7 @@ import FlashcardsPage from '@/pages/FlashcardsPage'
 import FormulasPage from '@/pages/FormulasPage'
 import SearchPage from '@/pages/SearchPage'
 import SettingsPage from '@/pages/SettingsPage'
+import LeaderboardPage from '@/pages/LeaderboardPage'
 import { warmSearchIndex } from '@/engines/search/engine'
 
 const queryClient = new QueryClient({
@@ -45,8 +47,12 @@ export default function App() {
           <Routes>
             <Route path="/" element={<AppShell><HomePage /></AppShell>} />
             <Route path="/test" element={<AppShell><TestBuilder /></AppShell>} />
+            <Route path="/test/:mode" element={<AppShell><TestBuilder /></AppShell>} />
             <Route path="/practice" element={<AppShell><PracticePage /></AppShell>} />
+            <Route path="/practice/:mode" element={<AppShell><PracticeModeRoute /></AppShell>} />
             <Route path="/search" element={<AppShell><SearchPage /></AppShell>} />
+            <Route path="/question-bank" element={<AppShell><SearchPage /></AppShell>} />
+            <Route path="/leaderboard" element={<AppShell><LeaderboardPage /></AppShell>} />
             <Route path="/analytics" element={<AppShell><AnalyticsPage /></AppShell>} />
             <Route path="/mistakes" element={<AppShell><MistakesPage /></AppShell>} />
             <Route path="/bookmarks" element={<AppShell><BookmarksPage /></AppShell>} />
