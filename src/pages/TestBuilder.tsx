@@ -49,6 +49,16 @@ function initialState(mode: TestModeId): BuilderState {
     mode === 'mixed-practice' ||
     mode === 'revision' ||
     mode === 'weak-chapter'
+  const allTypes: QuestionTypeId[] = [
+    'single',
+    'multiple',
+    'integer',
+    'numerical',
+    'matrix',
+    'paragraph',
+    'assertion-reason',
+    'match-columns',
+  ]
   return {
     name: TEST_MODES.find((m) => m.id === mode)?.name ?? 'Custom Test',
     mode,
@@ -57,7 +67,7 @@ function initialState(mode: TestModeId): BuilderState {
     selectedChapters: [],
     selectedTopics: [],
     difficulties: [1, 2, 3, 4, 5],
-    questionTypes: ['single', 'integer'],
+    questionTypes: practiceExam ? allTypes : ['single', 'integer'],
     totalQuestions: mode === 'daily-challenge' ? 10 : mode === 'marathon' ? 60 : mode === 'speed' ? 20 : 30,
     timeLimitMinutes: mode === 'daily-challenge' ? 15 : mode === 'marathon' ? 120 : mode === 'speed' ? 10 : 180,
     negativeMarking: mode !== 'revision',
@@ -257,7 +267,31 @@ export default function TestBuilder() {
                 <Input value={state.name} onChange={(e) => update({ name: e.target.value })} />
               </Field>
               <Field label="Exam Mode">
-                <Select value={state.exam} onChange={(e) => update({ exam: e.target.value as ExamId })}>
+                <Select
+                  value={state.exam}
+                  onChange={(e) => {
+                    const exam = e.target.value as ExamId
+                    if (exam === 'jee-advanced') {
+                      update({
+                        exam,
+                        questionTypes: [
+                          'single',
+                          'multiple',
+                          'integer',
+                          'numerical',
+                          'matrix',
+                          'paragraph',
+                          'assertion-reason',
+                          'match-columns',
+                        ],
+                      })
+                    } else if (exam === 'jee-main') {
+                      update({ exam, questionTypes: ['single', 'integer'] })
+                    } else {
+                      update({ exam })
+                    }
+                  }}
+                >
                   {EXAMS.map((ex) => (
                     <option key={ex.id} value={ex.id}>{ex.name}</option>
                   ))}

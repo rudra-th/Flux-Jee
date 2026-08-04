@@ -6,6 +6,12 @@ import { generateQuestion } from '@/engines/questionEngine/generator'
 import type { QuestionMeta } from '@/db'
 
 export { importRealQuestions, PYQ_SOURCE } from './importPyq'
+export {
+  importCuratedQuestions,
+  CURATED_QUESTIONS,
+  CURATED_QUESTION_COUNT,
+  CURATED_VERSION,
+} from './curated'
 
 export interface SeedOptions {
   /** Questions per micro-topic */

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { db } from '@/db'
-import { seedDatabase, importRealQuestions } from '@/db/seed'
+import { seedDatabase, importRealQuestions, importCuratedQuestions } from '@/db/seed'
 import { useUIStore } from '@/stores/uiStore'
 import { applyTheme, useSettingsStore } from '@/stores/settingsStore'
 
-const SEED_PER_TOPIC = 4
+const SEED_PER_TOPIC = 6
 
 type Stage = 'checking' | 'seeding' | 'importing' | 'done' | 'error'
 
@@ -37,7 +37,16 @@ export function DataBootstrap({ children }: { children: React.ReactNode }) {
       try {
         const count = await db.questions.count()
         if (count > 0) {
+          // Existing database: run the additive curated import in the
+          // background so every install gets the new question types.
           setStage('done')
+          importCuratedQuestions()
+            .then((n) => {
+              if (n > 0) pushToast(`${n} curated questions added`, 'success')
+            })
+            .catch(() => {
+              /* curated bank is optional */
+            })
           return
         }
         setNeedsBootstrap(true)
@@ -62,10 +71,18 @@ export function DataBootstrap({ children }: { children: React.ReactNode }) {
           // Network import failed — the generated bank is sufficient.
           imported = 0
         }
+        let curated = 0
+        try {
+          curated = await importCuratedQuestions()
+        } catch {
+          curated = 0
+        }
         setProgress(100)
         setStage('done')
         pushToast(
-          `${seeded} questions ready${imported ? ` + ${imported} real JEE PYQs` : ''}`,
+          `${seeded} questions ready${imported ? ` + ${imported} real JEE PYQs` : ''}${
+            curated ? ` + ${curated} curated` : ''
+          }`,
           'success',
         )
       } catch (err) {
