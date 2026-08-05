@@ -10,8 +10,7 @@ interface CardRequest {
   count?: number
 }
 
-export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== 'POST') return json(405, { error: 'Method not allowed' })
+export async function POST(req: Request): Promise<Response> {
   const ip = clientIp(req)
   if (rateLimited(ip)) return json(429, { error: 'Too many requests. Try again shortly.' })
 

@@ -1,7 +1,6 @@
 import { json, readKey } from '../_shared.js'
 
-export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== 'GET') return json(405, { error: 'Method not allowed' })
+export async function GET(req: Request): Promise<Response> {
   const configured = Boolean(readKey(req))
   return json(200, { configured })
 }
