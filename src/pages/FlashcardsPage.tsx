@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Card, Button, Badge, Icon, EmptyState, ProgressBar } from '@/components/ui'
 import { db } from '@/db'
 import { getDueFlashcards, reviewFlashcard, generateFlashcardsFromQuestions, getFlashcardStats } from '@/engines/flashcards/engine'
 import { Latex } from '@/components/ui'
 import type { Flashcard } from '@/types/progress'
 import { PageHeader } from '@/components/layout/AppShell'
+import { GenerateCardsModal } from '@/components/ai/GenerateCardsModal'
 
 const TYPE_TONE: Record<Flashcard['type'], 'info' | 'success' | 'warning' | 'danger' | 'muted'> = {
   formula: 'info',
@@ -20,8 +21,10 @@ export default function FlashcardsPage() {
   const [idx, setIdx] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [aiOpen, setAiOpen] = useState(false)
 
   const { data: stats } = useQuery({ queryKey: ['fc-stats'], queryFn: getFlashcardStats })
+  const queryClient = useQueryClient()
 
   const loadDeck = async () => {
     const due = await getDueFlashcards(30)
@@ -58,12 +61,23 @@ export default function FlashcardsPage() {
 
   const boxColors = ['bg-danger', 'bg-amber', 'bg-primary', 'bg-sky', 'bg-emerald']
 
+  const refreshStats = () => queryClient.invalidateQueries({ queryKey: ['fc-stats'] })
+
   return (
     <div>
       <PageHeader
         title="Flashcards"
         subtitle="Spaced repetition for concepts and formulas"
-        action={<Button size="sm" variant="outline" loading={generating} onClick={() => void generate()}><Icon name="sparkles" size={15} /> Generate from mistakes</Button>}
+        action={
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" loading={generating} onClick={() => void generate()}>
+              <Icon name="sparkles" size={15} /> Generate from mistakes
+            </Button>
+            <Button size="sm" onClick={() => setAiOpen(true)}>
+              <Icon name="brain" size={15} /> AI Generate
+            </Button>
+          </div>
+        }
       />
 
       {stats && (
@@ -139,6 +153,17 @@ export default function FlashcardsPage() {
           </div>
         </div>
       )}
+
+      <GenerateCardsModal
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        onGenerated={(n) => {
+          if (n > 0) {
+            void refreshStats()
+            void loadDeck()
+          }
+        }}
+      />
     </div>
   )
 }

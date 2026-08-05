@@ -1,6 +1,42 @@
 import { db } from '@/db'
-import type { Flashcard } from '@/types/progress'
+import type { Flashcard, FlashcardType } from '@/types/progress'
 import { randomId } from '@/utils/cn'
+
+export interface AiCardInput {
+  type: FlashcardType
+  subject: 'physics' | 'chemistry' | 'mathematics'
+  chapter: string
+  front: string
+  back: string
+}
+
+/** Persists flashcards produced by the AI generator (idempotent per run). */
+export async function saveAiFlashcards(cards: AiCardInput[]): Promise<number> {
+  const now = new Date().toISOString()
+  let created = 0
+  for (const c of cards) {
+    const dup = await db.flashcards
+      .filter((x) => x.chapter === c.chapter && x.front === c.front)
+      .count()
+    if (dup) continue
+    const row: Flashcard = {
+      id: randomId('fc-'),
+      type: c.type,
+      subject: c.subject,
+      chapter: c.chapter,
+      front: c.front,
+      back: c.back,
+      tags: [c.chapter, 'AI'],
+      box: 1,
+      nextReviewAt: now,
+      repetitions: 0,
+      createdAt: now,
+    }
+    await db.flashcards.put(row)
+    created++
+  }
+  return created
+}
 
 export async function generateFlashcardsFromQuestions(questionIds: string[]): Promise<number> {
   let created = 0

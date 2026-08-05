@@ -33,5 +33,9 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    proxy: {
+      // AI endpoints are serverless functions; proxy them when running `vercel dev`.
+      '/api': 'http://localhost:3000',
+    },
   },
 })

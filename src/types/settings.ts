@@ -17,6 +17,12 @@ export interface UserSettings {
   /** Whether first-time onboarding shown */
   onboarded: boolean
   offlineMode: boolean
+  /**
+   * Optional user-supplied Gemini API key. Stored ONLY in this browser
+   * (localStorage via the settings store) and sent to the AI endpoint as a
+   * per-request header. When empty, the server's own key is used.
+   */
+  geminiApiKey?: string
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {

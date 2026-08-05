@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, CardHeader, Button, Switch, Select, Field, Input, Icon, SegmentedControl, Modal } from '@/components/ui'
+import { Card, CardHeader, Button, Switch, Select, Field, Input, Icon, SegmentedControl, Modal, Badge } from '@/components/ui'
 import { useSettingsStore, applyTheme } from '@/stores/settingsStore'
 import { useUIStore } from '@/stores/uiStore'
 import type { ThemeId } from '@/types/settings'
@@ -15,6 +15,8 @@ import {
 } from '@/db/seed'
 import { PageHeader } from '@/components/layout/AppShell'
 import { cn } from '@/utils/cn'
+import { useQuery } from '@tanstack/react-query'
+import { aiHealth } from '@/services/ai'
 
 const THEMES: Array<{ id: ThemeId; label: string; desc: string }> = [
   { id: 'dark', label: 'Dark', desc: 'Classic dark UI' },
@@ -142,6 +144,47 @@ export default function SettingsPage() {
           </div>
         </Card>
 
+        {/* AI assistant */}
+        <Card>
+          <CardHeader title="AI Assistant" />
+          <div className="space-y-4 px-5 pb-5">
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-surface2 p-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Icon name="brain" size={18} />
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-text">Gemini AI</p>
+                  <p className="text-[11px] text-text3">AI flashcards &amp; the AI Tutor assistant</p>
+                </div>
+              </div>
+              <AiStatusBadge />
+            </div>
+
+            <div className="rounded-xl border border-border p-3">
+              <p className="mb-2 text-xs font-medium text-text">Optional: use your own Gemini API key</p>
+              <div className="flex gap-2">
+                <Input
+                  type="password"
+                  placeholder="AIza… (leave blank to use the shared key)"
+                  value={settings.geminiApiKey ?? ''}
+                  onChange={(e) => apply({ geminiApiKey: e.target.value })}
+                  autoComplete="off"
+                />
+                {settings.geminiApiKey ? (
+                  <Button variant="outline" onClick={() => apply({ geminiApiKey: '' })}>
+                    Clear
+                  </Button>
+                ) : null}
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-text3">
+                Your key is stored only in this browser and is sent only to this app's AI endpoint for the current
+                request — it is never uploaded to our servers or shown in the source code.
+              </p>
+            </div>
+          </div>
+        </Card>
+
         {/* Profile */}
         <Card>
           <CardHeader title="Profile" />
@@ -256,5 +299,15 @@ function ThemeSwatch({ id, active }: { id: ThemeId; active: boolean }) {
     <span className={cn('inline-flex h-5 w-8 items-center justify-center rounded border text-[8px] font-bold', active && 'border-primary')} style={{ backgroundColor: bg, color: fg, borderColor: active ? accent : 'rgba(128,128,128,0.4)' }}>
       <span style={{ color: accent }}>Aa</span>
     </span>
+  )
+}
+
+function AiStatusBadge() {
+  const { data } = useQuery({ queryKey: ['ai-health'], queryFn: aiHealth, retry: false })
+  const configured = data?.configured ?? false
+  return configured ? (
+    <Badge tone="success">Server key configured</Badge>
+  ) : (
+    <Badge tone="warning">Not configured</Badge>
   )
 }

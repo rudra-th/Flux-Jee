@@ -43,6 +43,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { label: 'Question Bank', path: '/question-bank', icon: 'question' },
       { label: 'Flashcards', path: '/flashcards', icon: 'flashcard' },
+      { label: 'AI Tutor', path: '/tutor', icon: 'brain', badge: 'New' },
       { label: 'Formula Revision', path: '/formulas', icon: 'formula' },
       { label: 'Mistake Notebook', path: '/mistakes', icon: 'mistake' },
       { label: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' },
