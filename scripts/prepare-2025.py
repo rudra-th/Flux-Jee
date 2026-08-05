@@ -12,8 +12,12 @@ import csv
 import json
 import os
 import re
+import sys
 
 import pyarrow.parquet as pq
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from chapter_infer import infer_chapter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(ROOT, "public", "data")
@@ -27,73 +31,6 @@ CREATED_AT = "2026-08-05T00:00:00.000Z"
 SUBJECT_ID = {"Mathematics": "mathematics", "maths": "mathematics", "physics": "physics",
               "Physics": "physics", "Chemistry": "chemistry", "chemistry": "chemistry"}
 
-# Keyword -> app chapter inference (heuristic; "General" fallback).
-CHAPTER_KEYWORDS = {
-  "mathematics": [
-    ("Differential Equations", ["differential equation", "dy/dx", "solution of the differential"]),
-    ("Integral Calculus", ["integral", "integration", "area of the region", "area bounded", "under the curve"]),
-    ("Limits, Continuity and Differentiability", ["limit", "continuity", "differentiab", "l\u2019hopital", "l'hopital"]),
-    ("Applications of Derivatives", ["tangent", "normal to", "monotonic", "maxima", "minima", "rate of change", "increasing", "decreasing"]),
-    ("Sequences and Series", ["g.p.", "a.p.", "geometric progression", "arithmetic progression", "progression", "series"]),
-    ("Matrices and Determinants", ["matrix", "determinant", "adj(", "invertible"]),
-    ("Complex Numbers and Quadratic Equations", ["complex number", "argument", "|z", "quadratic", "roots of", "cube roots"]),
-    ("Coordinate Geometry", ["circle", "parabola", "ellipse", "hyperbola", "conic", "straight line", "locus", "eccentricity", "directrix"]),
-    ("Three Dimensional Geometry", ["direction cosines", "direction ratios", "shortest distance", "z-axis", "3d space", "plane"]),
-    ("Vector Algebra", ["vector", "cross product", "dot product", "projection of", "\\vec"]),
-    ("Statistics and Probability", ["probability", "variance", "mean of", "standard deviation", "random variable", "median"]),
-    ("Permutations and Combinations", ["permutation", "combination", "number of ways", "arranged", "chosen"]),
-    ("Binomial Theorem", ["binomial", "coefficient of", "general term"]),
-    ("Trigonometry", ["sin", "cos", "tan", "sec", "cosec", "cot", "trigonometric", "inverse trig"]),
-    ("Sets, Relations and Functions", ["relation", "function", "f(x)", "domain", "range of", "one-one", "onto", "inverse function", "set"]),
-    ("Mathematical Reasoning", ["statement", "truth value", "contradiction", "tautology"]),
-  ],
-  "physics": [
-    ("Kinematics", ["velocity", "acceleration", "displacement", "projectile", "projected", "speed"]),
-    ("Laws of Motion", ["force", "friction", "newton", "incline", "tension", "string"]),
-    ("Work, Energy and Power", ["work done", "kinetic energy", "potential energy", "power"]),
-    ("Rotational Motion", ["angular", "torque", "moment of inertia", "rotating", "rotational", "disc"]),
-    ("Gravitation", ["gravit", "satellite", "escape velocity", "orbital"]),
-    ("Oscillations", ["oscillat", "simple harmonic", "shm", "spring", "pendulum", "vibration"]),
-    ("Waves", ["wave", "frequency", "wavelength", "organ pipe", "harmonic", "beats", "string"]),
-    ("Properties of Solids and Fluids", ["bulk modulus", "young", "stress", "strain", "elastic", "viscos", "surface tension", "bubble", "pressure", "fluid"]),
-    ("Thermal Properties and Thermodynamics", ["temperature", "heat", "thermodynam", "specific heat", "latent heat", "isothermal", "adiabatic", "entropy"]),
-    ("Electrostatics", ["electric", "charge", "potential", "coulomb", "flux", "capacitor", "capacitance", "dielectric", "gauss"]),
-    ("Current Electricity", ["current", "resistance", "ohm", "potentiometer", "circuit", "emf", "battery", "voltage"]),
-    ("Magnetic Effects of Current and Magnetism", ["magnetic", "magnet", "ampere", "solenoid", "lorentz"]),
-    ("EMI and AC", ["induction", "induced", "mutual", "self-inductance", "alternating", "ac circuit", "rms"]),
-    ("Ray Optics", ["lens", "mirror", "reflection", "refraction", "refractive index", "prism", "optical", "focal", "optic axis"]),
-    ("Wave Optics", ["interference", "diffraction", "fringe", "double slit", "polaris", "young"]),
-    ("Dual Nature of Matter and Radiation", ["photoelectric", "photon", "work function", "de broglie", "dual nature", "threshold"]),
-    ("Atoms and Nuclei", ["hydrogen", "bohr", "nucleus", "radioactive", "decay", "half-life", "binding energy", "mass defect"]),
-    ("Semiconductors", ["diode", "semiconductor", "transistor", "forward bias", "reverse bias", "p-n"]),
-  ],
-  "chemistry": [
-    ("Structure of Atom", ["electron", "orbital", "quantum number", "excited state", "ground state", "atomic number"]),
-    ("Classification and Periodicity", ["electronegativity", "periodic", "ionisation enthalpy", "ionic radii", "metallic character"]),
-    ("Chemical Bonding", ["bond", "hybridi", "geometry", "dipole moment", "resonance", "lattice"]),
-    ("Some Basic Concepts of Chemistry", ["mole", "molar mass", "molarity", "molality", "stoichiometry", "percentage composition", "solution of aluminium"]),
-    ("States of Matter", ["gas", "pressure", "boyle", "charles", "kelvin", "vapour", "boiling point", "raoult", "van\u2019t hoff", "osmotic"]),
-    ("Redox Reactions", ["redox", "oxidation", "reduction", "electrolysis", "electrolyte", "faraday", "electrode", "cfse"]),
-    ("Equilibrium", ["equilibrium", "kp", "kc", "ka ", "kb ", "ph of", "buffer", "solubility product"]),
-    ("s-Block Elements", ["alkali", "s-block", "alkaline"]),
-    ("p-Block Elements", ["p-block", "halogen", "sulphuric acid", "noble gas", "boron", "nitrogen", "phosphorus", "sulphur"]),
-    ("Coordination Compounds", ["coordination", "ligand", "complex", "chelate", "magnetic behaviour"]),
-    ("Alcohols, Phenols and Ethers", ["alcohol", "phenol", "ether"]),
-    ("Aldehydes, Ketones and Acids", ["aldehyde", "ketone", "carbonyl", "fehling", "tollen", "carboxy", "carboxylic", "ascorbic"]),
-    ("Haloalkanes and Haloarenes", ["halide", "sn1", "sn2", "chloro", "bromo", "iodo", "carius"]),
-    ("Hydrocarbons", ["hydrocarbon", "alkane", "alkene", "alkyne", "propene", "butene", "aromatic", "benzene", "propyne"]),
-    ("Organic Chemistry Basics", ["isomer", "stereoisomer", "iupac", "nomenclature", "geometrical", "optical", "iupac name"]),
-    ("Amines", ["amine", "ammonia", "diazonium", "azo"]),
-  ],
-}
-
-def infer_chapter(subject, text):
-    t = text.lower().replace("\\", " ").replace("{", " ").replace("}", " ")
-    for chapter, kws in CHAPTER_KEYWORDS.get(subject, []):
-        for kw in kws:
-            if kw in t:
-                return chapter
-    return "General"
 
 def base_question(qid, subject, chapter, qtype, answer, options, text, year, paper, exam, shift=None, session=None, img=None, difficulty=3, tag_extra=()):
     return {
@@ -154,7 +91,7 @@ def parse_ck0607():
                 continue
             sm = shift_re.search(r.get("Shift Name") or "")
             shift = int(sm.group(3)) if sm else None
-            chapter = infer_chapter(subject, stem)
+            chapter = infer_chapter(subject, stem) or "General"
             stem_clean = re.sub(r"\s*\n\s*", " ", stem)
             uid = (r.get("unique_id") or "").strip()
             out.append(base_question(
@@ -186,7 +123,7 @@ def parse_ck0607():
                 continue
             sm = shift_re.search(r.get("Shift Name") or "")
             shift = int(sm.group(3)) if sm else None
-            chapter = infer_chapter(subject, qtext)
+            chapter = infer_chapter(subject, qtext) or "General"
             uid = (r.get("unique_id") or "").strip()
             out.append(base_question(
                 f"m2025-{uid}", subject, chapter, qtype_out,
@@ -210,7 +147,7 @@ def parse_hymanshu():
         if not q or "\ufffd" in q:
             skipped += 1
             continue
-        chapter = infer_chapter(subject, q)
+        chapter = infer_chapter(subject, q) or "General"
         qtype = str(r["question_type"]).lower()
         qid = f"h2025-{idx:03d}"
         if qtype == "mcq":
@@ -298,7 +235,7 @@ def parse_mmjee():
         qid = "mmjee-" + str(r["question_id"]).strip()
         img_name = f"{qid}.png"
         img_rel = f"images/mmjee/{img_name}"
-        chapter = "JEE Advanced"
+        chapter = "JEE Advanced PYQ"
         year = int(re.sub(r"\D", "", str(r["year"]))[:4] or 2019)
         paper = "paper-1" if str(r["paper"]).upper() == "P1" else "paper-2"
         if qtype == "Numerical":
