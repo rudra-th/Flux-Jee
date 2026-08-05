@@ -1,4 +1,37 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test as base, expect } from '@playwright/test'
+import type { BrowserContext, Page } from '@playwright/test'
+
+/**
+ * Share one browser context across every test in this worker. The question
+ * bank lives in IndexedDB, which is scoped to the context (Playwright's
+ * storageState only persists localStorage/cookies) — a fresh context per test
+ * would re-import all ~15k questions on every test and blow the timeout under
+ * load. Sharing means the first-boot bootstrap runs once; later tests load
+ * straight into a populated bank.
+ */
+const test = base.extend<{ sharedContext: BrowserContext }>({
+  sharedContext: [
+    async ({ browser }, use) => {
+      const context = await browser.newContext({ baseURL: 'http://localhost:4173' })
+      await use(context)
+      await context.close()
+    },
+    { scope: 'worker' },
+  ],
+})
+
+/** Open a fresh page inside the shared context and close it when the test ends. */
+async function withPage(
+  context: BrowserContext,
+  fn: (page: Page) => Promise<void>,
+): Promise<void> {
+  const page = await context.newPage()
+  try {
+    await fn(page)
+  } finally {
+    await page.close()
+  }
+}
 
 /** Answer whatever question type is currently on screen. */
 async function answerCurrentQuestion(page: Page) {
@@ -18,222 +51,232 @@ async function answerCurrentQuestion(page: Page) {
 
 /** Wait for the app shell + home page (bootstrap must have completed). */
 async function waitForHome(page: Page) {
-  await expect(page.getByRole('heading', { name: /Welcome back/ })).toBeVisible({ timeout: 150_000 })
+  await expect(page.getByRole('heading', { name: /Welcome back/ })).toBeVisible({ timeout: 240_000 })
 }
 
-test('first boot provisions the question bank and renders home', async ({ page }) => {
-  const pageErrors: string[] = []
-  page.on('pageerror', (e) => pageErrors.push(e.message))
+test('first boot provisions the question bank and renders home', async ({ sharedContext }) => {
+  await withPage(sharedContext, async (page) => {
+    const pageErrors: string[] = []
+    page.on('pageerror', (e) => pageErrors.push(e.message))
 
-  await page.goto('/')
+    await page.goto('/')
 
-  // Seeding 1900+ questions takes a while; wait for the real home page.
-  await waitForHome(page)
-  await expect(page).toHaveURL(/\/$/)
+    // Seeding 1900+ questions takes a while; wait for the real home page.
+    await waitForHome(page)
+    await expect(page).toHaveURL(/\/$/)
 
-  // Daily challenge only reports "Questions ready" when questions exist.
-  await expect(page.getByText('Questions ready', { exact: true })).toBeVisible({ timeout: 60_000 })
+    // Daily challenge only reports "Questions ready" when questions exist.
+    await expect(page.getByText('Questions ready', { exact: true })).toBeVisible({ timeout: 60_000 })
 
-  expect(pageErrors).toEqual([])
-})
-
-test('every page and mode route renders (no 404 bounce)', async ({ page }) => {
-  const pageErrors: string[] = []
-  page.on('pageerror', (e) => pageErrors.push(e.message))
-
-  await page.goto('/')
-  await waitForHome(page)
-
-  const heading = async (name: string | RegExp) =>
-    expect(page.getByRole('heading', { name })).toBeVisible()
-
-  const pages: Array<[string, string | RegExp]> = [
-    ['/analytics', 'Analytics'],
-    ['/mistakes', 'Mistake Notebook'],
-    ['/bookmarks', 'Bookmarks'],
-    ['/flashcards', 'Flashcards'],
-    ['/formulas', 'Formula Sheets'],
-    ['/search', 'Question Search'],
-    ['/question-bank', 'Question Search'],
-    ['/leaderboard', 'Leaderboard'],
-    ['/settings', 'Settings'],
-    ['/practice', 'Practice'],
-    ['/test', 'Custom Test'],
-    ['/test/custom', 'Custom Test'],
-    ['/test/full', 'Full Test'],
-    ['/test/chapter', 'Chapter Test'],
-    ['/test/subject', 'Subject Test'],
-    ['/test/topic', 'Topic Test'],
-    ['/practice/mixed', 'Mixed Practice'],
-    ['/practice/daily', 'Daily Challenge'],
-    ['/practice/marathon', 'Marathon Mode'],
-    ['/practice/speed', 'Speed Test'],
-    ['/practice/revision', 'Revision Mode'],
-    ['/practice/pyq', 'PYQ Mode'],
-    ['/practice/adaptive', 'Adaptive Mode'],
-    ['/practice/weak', 'Weak Chapter Mode'],
-    ['/practice/wrong', 'Mistake Notebook'],
-    ['/practice/bookmarked', 'Bookmarks'],
-  ]
-
-  for (const [path, name] of pages) {
-    await page.goto(path)
-    await heading(name)
-  }
-
-  // Weak-chapter deep link should pre-select the chapter.
-  await page.goto('/test/chapter?subject=physics&chapter=Units%20and%20Measurements')
-  await heading('Chapter Test')
-  await page.getByRole('tab', { name: 'Chapters' }).click()
-  await expect(page.getByText('1 selected')).toBeVisible()
-
-  // Sidebar buttons navigate (Question Bank + Leaderboard routes).
-  await page.goto('/')
-  await waitForHome(page)
-  await page.getByRole('link', { name: 'Question Bank' }).click()
-  await heading('Question Search')
-  await page.getByRole('link', { name: 'Leaderboard' }).click()
-  await heading('Leaderboard')
-
-  // Switching between practice modes via the sidebar must update the mode
-  // header (regression: state used to stay stale on same-shaped routes).
-  await page.getByRole('link', { name: 'Daily Challenge' }).click()
-  await expect(page).toHaveURL(/\/practice\/daily/)
-  await heading('Daily Challenge')
-  await page.getByRole('link', { name: 'Marathon' }).click()
-  await expect(page).toHaveURL(/\/practice\/marathon/)
-  await heading('Marathon Mode')
-  await page.getByRole('link', { name: 'Speed Test' }).click()
-  await expect(page).toHaveURL(/\/practice\/speed/)
-  await heading('Speed Test')
-  await page.getByRole('link', { name: 'Full Test' }).click()
-  await expect(page).toHaveURL(/\/test\/full/)
-  await heading('Full Test')
-
-  // Home hero buttons.
-  await page.goto('/')
-  await waitForHome(page)
-  await page.getByRole('button', { name: 'Start Full Test' }).click()
-  await expect(page).toHaveURL(/\/test\/full/)
-  await page.goto('/')
-  await waitForHome(page)
-  await page.getByRole('button', { name: 'Daily Challenge', exact: true }).click()
-  await expect(page).toHaveURL(/\/practice\/daily/)
-  await page.goto('/')
-  await waitForHome(page)
-  await page.getByRole('button', { name: 'Adaptive Mode', exact: true }).click()
-  await expect(page).toHaveURL(/\/practice\/adaptive/)
-
-  // Footer "Made by Rudra" tag links to GitHub.
-  const madeBy = page.getByRole('link', { name: /Made by Rudra/ }).first()
-  await expect(madeBy).toBeVisible()
-  await expect(madeBy).toHaveAttribute('href', 'https://github.com/rudra-th')
-
-  // Global "/" shortcut opens search, as advertised in the TopBar.
-  await page.keyboard.press('/')
-  await expect(page).toHaveURL(/\/search/)
-  await heading('Question Search')
-
-  expect(pageErrors).toEqual([])
-})
-
-test('full test round trip: build, run, answer, submit, result', async ({ page }) => {
-  const pageErrors: string[] = []
-  page.on('pageerror', (e) => pageErrors.push(e.message))
-
-  await page.goto('/test/full')
-  await expect(page.getByRole('heading', { name: 'Full Test' })).toBeVisible({ timeout: 150_000 })
-  await expect(page).toHaveURL(/\/test\/full/)
-
-  await page.getByRole('button', { name: 'Start Test' }).click()
-  await page.waitForURL(/\/run\//)
-
-  // Instructions screen.
-  await page.locator('#agree').check()
-  await page.getByRole('button', { name: 'Start Test' }).click()
-
-  // Answer first question, advance to second.
-  await expect(page.getByText('Question 1 /')).toBeVisible()
-  await answerCurrentQuestion(page)
-  await page.getByRole('button', { name: 'Save & Next' }).click()
-  await expect(page.getByText('Question 2 /')).toBeVisible()
-
-  // Submit via the dialog.
-  await page.getByRole('button', { name: 'Submit', exact: true }).click()
-  await page.getByRole('button', { name: 'Submit Test' }).click()
-  await page.waitForURL(/\/result\//)
-  await expect(page.getByRole('heading', { name: /Question Test/ })).toBeVisible({ timeout: 30_000 })
-
-  expect(pageErrors).toEqual([])
-})
-
-test('search finds questions after seeding', async ({ page }) => {
-  const pageErrors: string[] = []
-  page.on('pageerror', (e) => pageErrors.push(e.message))
-
-  await page.goto('/')
-  await waitForHome(page)
-
-  await page.goto('/search')
-  await expect(page.getByRole('heading', { name: 'Question Search' })).toBeVisible()
-
-  const input = page.getByPlaceholder('Search by topic, formula, concept…')
-  await input.fill('Newton')
-  await input.press('Enter')
-
-  const counter = page.getByText(/\d+ results/)
-  await expect(counter).toBeVisible()
-  const count = parseInt((await counter.textContent()) ?? '0', 10)
-  expect(count).toBeGreaterThan(0)
-
-  expect(pageErrors).toEqual([])
-})
-
-test('flashcards generate from mistakes', async ({ page }) => {
-  const pageErrors: string[] = []
-  page.on('pageerror', (e) => pageErrors.push(e.message))
-
-  await page.goto('/')
-  await waitForHome(page)
-
-  // Guarantee a wrong-answer record so the generator has material to work with.
-  await page.evaluate(async () => {
-    const req = indexedDB.open('jee-arena')
-    const open = new Promise<void>((resolve, reject) => {
-      req.onsuccess = () => resolve()
-      req.onerror = () => reject(req.error)
-    })
-    await open
-    const read = req.result.transaction('questions', 'readonly')
-    const all = await new Promise<any[]>((resolve, reject) => {
-      const r = read.objectStore('questions').getAll()
-      r.onsuccess = () => resolve(r.result)
-      r.onerror = () => reject(r.error)
-    })
-    const q = all.find((x) => x.solution && x.solution.concept) ?? all[0]
-    const write = req.result.transaction('answerRecords', 'readwrite')
-    write.objectStore('answerRecords').put({
-      questionId: q.id,
-      everCorrect: false,
-      everWrong: true,
-      everGuessed: false,
-      everSkipped: false,
-      accuracy: 0,
-      attempts: 1,
-      correctAttempts: 0,
-      totalTime: 10,
-      lastAttemptedAt: new Date().toISOString(),
-      lastResult: 'wrong',
-    })
-    await new Promise<void>((resolve) => {
-      write.oncomplete = () => resolve()
-    })
+    expect(pageErrors).toEqual([])
   })
+})
 
-  await page.goto('/flashcards')
-  await expect(page.getByRole('heading', { name: 'Flashcards' })).toBeVisible()
-  await page.getByRole('button', { name: 'Generate from mistakes' }).first().click()
-  await expect(page.getByRole('button', { name: 'Show Answer' })).toBeVisible({ timeout: 30_000 })
+test('every page and mode route renders (no 404 bounce)', async ({ sharedContext }) => {
+  await withPage(sharedContext, async (page) => {
+    const pageErrors: string[] = []
+    page.on('pageerror', (e) => pageErrors.push(e.message))
 
-  expect(pageErrors).toEqual([])
+    await page.goto('/')
+    await waitForHome(page)
+
+    const heading = async (name: string | RegExp) =>
+      expect(page.getByRole('heading', { name })).toBeVisible()
+
+    const pages: Array<[string, string | RegExp]> = [
+      ['/analytics', 'Analytics'],
+      ['/mistakes', 'Mistake Notebook'],
+      ['/bookmarks', 'Bookmarks'],
+      ['/flashcards', 'Flashcards'],
+      ['/formulas', 'Formula Sheets'],
+      ['/search', 'Question Search'],
+      ['/question-bank', 'Question Search'],
+      ['/leaderboard', 'Leaderboard'],
+      ['/settings', 'Settings'],
+      ['/practice', 'Practice'],
+      ['/test', 'Custom Test'],
+      ['/test/custom', 'Custom Test'],
+      ['/test/full', 'Full Test'],
+      ['/test/chapter', 'Chapter Test'],
+      ['/test/subject', 'Subject Test'],
+      ['/test/topic', 'Topic Test'],
+      ['/practice/mixed', 'Mixed Practice'],
+      ['/practice/daily', 'Daily Challenge'],
+      ['/practice/marathon', 'Marathon Mode'],
+      ['/practice/speed', 'Speed Test'],
+      ['/practice/revision', 'Revision Mode'],
+      ['/practice/pyq', 'PYQ Mode'],
+      ['/practice/adaptive', 'Adaptive Mode'],
+      ['/practice/weak', 'Weak Chapter Mode'],
+      ['/practice/wrong', 'Mistake Notebook'],
+      ['/practice/bookmarked', 'Bookmarks'],
+    ]
+
+    for (const [path, name] of pages) {
+      await page.goto(path)
+      await heading(name)
+    }
+
+    // Weak-chapter deep link should pre-select the chapter.
+    await page.goto('/test/chapter?subject=physics&chapter=Units%20and%20Measurements')
+    await heading('Chapter Test')
+    await page.getByRole('tab', { name: 'Chapters' }).click()
+    await expect(page.getByText('1 selected')).toBeVisible()
+
+    // Sidebar buttons navigate (Question Bank + Leaderboard routes).
+    await page.goto('/')
+    await waitForHome(page)
+    await page.getByRole('link', { name: 'Question Bank' }).click()
+    await heading('Question Search')
+    await page.getByRole('link', { name: 'Leaderboard' }).click()
+    await heading('Leaderboard')
+
+    // Switching between practice modes via the sidebar must update the mode
+    // header (regression: state used to stay stale on same-shaped routes).
+    await page.getByRole('link', { name: 'Daily Challenge' }).click()
+    await expect(page).toHaveURL(/\/practice\/daily/)
+    await heading('Daily Challenge')
+    await page.getByRole('link', { name: 'Marathon' }).click()
+    await expect(page).toHaveURL(/\/practice\/marathon/)
+    await heading('Marathon Mode')
+    await page.getByRole('link', { name: 'Speed Test' }).click()
+    await expect(page).toHaveURL(/\/practice\/speed/)
+    await heading('Speed Test')
+    await page.getByRole('link', { name: 'Full Test' }).click()
+    await expect(page).toHaveURL(/\/test\/full/)
+    await heading('Full Test')
+
+    // Home hero buttons.
+    await page.goto('/')
+    await waitForHome(page)
+    await page.getByRole('button', { name: 'Start Full Test' }).click()
+    await expect(page).toHaveURL(/\/test\/full/)
+    await page.goto('/')
+    await waitForHome(page)
+    await page.getByRole('button', { name: 'Daily Challenge', exact: true }).click()
+    await expect(page).toHaveURL(/\/practice\/daily/)
+    await page.goto('/')
+    await waitForHome(page)
+    await page.getByRole('button', { name: 'Adaptive Mode', exact: true }).click()
+    await expect(page).toHaveURL(/\/practice\/adaptive/)
+
+    // Footer "Made by Rudra" tag links to GitHub.
+    const madeBy = page.getByRole('link', { name: /Made by Rudra/ }).first()
+    await expect(madeBy).toBeVisible()
+    await expect(madeBy).toHaveAttribute('href', 'https://github.com/rudra-th')
+
+    // Global "/" shortcut opens search, as advertised in the TopBar.
+    await page.keyboard.press('/')
+    await expect(page).toHaveURL(/\/search/)
+    await heading('Question Search')
+
+    expect(pageErrors).toEqual([])
+  })
+})
+
+test('full test round trip: build, run, answer, submit, result', async ({ sharedContext }) => {
+  await withPage(sharedContext, async (page) => {
+    const pageErrors: string[] = []
+    page.on('pageerror', (e) => pageErrors.push(e.message))
+
+    await page.goto('/test/full')
+    await expect(page.getByRole('heading', { name: 'Full Test' })).toBeVisible({ timeout: 150_000 })
+    await expect(page).toHaveURL(/\/test\/full/)
+
+    await page.getByRole('button', { name: 'Start Test' }).click()
+    await page.waitForURL(/\/run\//)
+
+    // Instructions screen.
+    await page.locator('#agree').check()
+    await page.getByRole('button', { name: 'Start Test' }).click()
+
+    // Answer first question, advance to second.
+    await expect(page.getByText('Question 1 /')).toBeVisible()
+    await answerCurrentQuestion(page)
+    await page.getByRole('button', { name: 'Save & Next' }).click()
+    await expect(page.getByText('Question 2 /')).toBeVisible()
+
+    // Submit via the dialog.
+    await page.getByRole('button', { name: 'Submit', exact: true }).click()
+    await page.getByRole('button', { name: 'Submit Test' }).click()
+    await page.waitForURL(/\/result\//)
+    await expect(page.getByRole('heading', { name: /Question Test/ })).toBeVisible({ timeout: 30_000 })
+
+    expect(pageErrors).toEqual([])
+  })
+})
+
+test('search finds questions after seeding', async ({ sharedContext }) => {
+  await withPage(sharedContext, async (page) => {
+    const pageErrors: string[] = []
+    page.on('pageerror', (e) => pageErrors.push(e.message))
+
+    await page.goto('/')
+    await waitForHome(page)
+
+    await page.goto('/search')
+    await expect(page.getByRole('heading', { name: 'Question Search' })).toBeVisible()
+
+    const input = page.getByPlaceholder('Search by topic, formula, concept…')
+    await input.fill('Newton')
+    await input.press('Enter')
+
+    const counter = page.getByText(/\d+ results/)
+    await expect(counter).toBeVisible()
+    const count = parseInt((await counter.textContent()) ?? '0', 10)
+    expect(count).toBeGreaterThan(0)
+
+    expect(pageErrors).toEqual([])
+  })
+})
+
+test('flashcards generate from mistakes', async ({ sharedContext }) => {
+  await withPage(sharedContext, async (page) => {
+    const pageErrors: string[] = []
+    page.on('pageerror', (e) => pageErrors.push(e.message))
+
+    await page.goto('/')
+    await waitForHome(page)
+
+    // Guarantee a wrong-answer record so the generator has material to work with.
+    await page.evaluate(async () => {
+      const req = indexedDB.open('jee-arena')
+      const open = new Promise<void>((resolve, reject) => {
+        req.onsuccess = () => resolve()
+        req.onerror = () => reject(req.error)
+      })
+      await open
+      const read = req.result.transaction('questions', 'readonly')
+      const all = await new Promise<any[]>((resolve, reject) => {
+        const r = read.objectStore('questions').getAll()
+        r.onsuccess = () => resolve(r.result)
+        r.onerror = () => reject(r.error)
+      })
+      const q = all.find((x) => x.solution && x.solution.concept) ?? all[0]
+      const write = req.result.transaction('answerRecords', 'readwrite')
+      write.objectStore('answerRecords').put({
+        questionId: q.id,
+        everCorrect: false,
+        everWrong: true,
+        everGuessed: false,
+        everSkipped: false,
+        accuracy: 0,
+        attempts: 1,
+        correctAttempts: 0,
+        totalTime: 10,
+        lastAttemptedAt: new Date().toISOString(),
+        lastResult: 'wrong',
+      })
+      await new Promise<void>((resolve) => {
+        write.oncomplete = () => resolve()
+      })
+    })
+
+    await page.goto('/flashcards')
+    await expect(page.getByRole('heading', { name: 'Flashcards' })).toBeVisible()
+    await page.getByRole('button', { name: 'Generate from mistakes' }).first().click()
+    await expect(page.getByRole('button', { name: 'Show Answer' })).toBeVisible({ timeout: 30_000 })
+
+    expect(pageErrors).toEqual([])
+  })
 })
