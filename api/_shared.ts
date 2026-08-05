@@ -19,17 +19,30 @@ export const json = (status: number, body: unknown): Response =>
     headers: { 'content-type': 'application/json; charset=utf-8' },
   })
 
+/** Reads a header from either a WHATWG Headers instance or a plain object. */
+export function header(req: Request, name: string): string | null {
+  const lower = name.toLowerCase()
+  const h = req.headers as unknown
+  if (h && typeof (h as { get?: unknown }).get === 'function') {
+    return (h as Headers).get(name)
+  }
+  const raw = (h as Record<string, unknown>)[lower]
+  if (raw == null) return null
+  if (Array.isArray(raw)) return raw[0] ?? null
+  return String(raw)
+}
+
 export function readKey(req: Request): string | null {
-  const header = req.headers.get('x-api-key')
-  if (header && header.trim()) return header.trim()
+  const headerValue = header(req, 'x-api-key')
+  if (headerValue && headerValue.trim()) return headerValue.trim()
   const env = process.env.GEMINI_API_KEY
   return env && env.trim() ? env.trim() : null
 }
 
 export function clientIp(req: Request): string {
-  const fwd = req.headers.get('x-forwarded-for')
+  const fwd = header(req, 'x-forwarded-for')
   if (fwd) return fwd.split(',')[0]?.trim() ?? 'unknown'
-  return req.headers.get('x-real-ip') ?? 'unknown'
+  return header(req, 'x-real-ip') ?? 'unknown'
 }
 
 /** Very light per-IP rate limit (best-effort; Vercel instances are ephemeral). */
