@@ -136,6 +136,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <Icon name="settings" size={17} />
           Settings
         </NavLink>
+        <a
+          href="https://github.com/rudra-th"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-text2 transition-colors hover:bg-surface2 hover:text-text"
+        >
+          <Icon name="github" size={17} />
+          <span className="flex-1 truncate">Made by Rudra</span>
+        </a>
       </div>
     </div>
   )

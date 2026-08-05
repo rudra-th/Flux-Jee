@@ -125,7 +125,7 @@ test('every page and mode route renders (no 404 bounce)', async ({ page }) => {
   await expect(page).toHaveURL(/\/practice\/adaptive/)
 
   // Footer "Made by Rudra" tag links to GitHub.
-  const madeBy = page.getByRole('link', { name: /Made by Rudra/ })
+  const madeBy = page.getByRole('link', { name: /Made by Rudra/ }).first()
   await expect(madeBy).toBeVisible()
   await expect(madeBy).toHaveAttribute('href', 'https://github.com/rudra-th')
 
