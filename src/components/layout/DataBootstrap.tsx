@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { db } from '@/db'
-import { seedDatabase, importRealQuestions, importCuratedQuestions } from '@/db/seed'
+import {
+  seedDatabase,
+  importRealQuestions,
+  importCuratedQuestions,
+  importMainBank,
+  importAdvBank,
+} from '@/db/seed'
 import { useUIStore } from '@/stores/uiStore'
 import { applyTheme, useSettingsStore } from '@/stores/settingsStore'
 
@@ -11,10 +17,10 @@ type Stage = 'checking' | 'seeding' | 'importing' | 'done' | 'error'
 /**
  * Ensures the local question database is populated before the app renders.
  * Runs once: seeds the full-syllabus generated bank, then imports the bundled
- * real JEE PYQ dataset (1913 questions, eQOURSE CC BY 4.0). Both steps are
- * resilient — if the network import fails the generated bank is still enough
- * to run every mode. A progress screen prevents users from ever landing on an
- * empty app.
+ * real JEE banks (eQOURSE PYQ, Grafite JEE Main, JEEBench Advanced, curated).
+ * These steps are resilient — if an import fails the generated bank is still
+ * enough to run every mode. A progress screen prevents users from ever landing
+ * on an empty app.
  */
 export function DataBootstrap({ children }: { children: React.ReactNode }) {
   const [stage, setStage] = useState<Stage>('checking')
@@ -37,16 +43,20 @@ export function DataBootstrap({ children }: { children: React.ReactNode }) {
       try {
         const count = await db.questions.count()
         if (count > 0) {
-          // Existing database: run the additive curated import in the
-          // background so every install gets the new question types.
+          // Existing database: run the additive curated + real-bank imports in
+          // the background so every install gets the new question types.
           setStage('done')
-          importCuratedQuestions()
-            .then((n) => {
-              if (n > 0) pushToast(`${n} curated questions added`, 'success')
-            })
-            .catch(() => {
-              /* curated bank is optional */
-            })
+          Promise.allSettled([
+            importCuratedQuestions(),
+            importMainBank(),
+            importAdvBank(),
+          ]).then(([curated, bank, adv]) => {
+            const total =
+              (curated.status === 'fulfilled' ? curated.value : 0) +
+              (bank.status === 'fulfilled' ? bank.value : 0) +
+              (adv.status === 'fulfilled' ? adv.value : 0)
+            if (total > 0) pushToast(`${total} questions added`, 'success')
+          })
           return
         }
         setNeedsBootstrap(true)
@@ -77,10 +87,30 @@ export function DataBootstrap({ children }: { children: React.ReactNode }) {
         } catch {
           curated = 0
         }
+        let bank = 0
+        try {
+          bank = await importMainBank({
+            signal: { cancelled: false },
+            progress: (done, total) => setProgress(Math.round((done / total) * 100)),
+          })
+        } catch {
+          bank = 0
+        }
+        let adv = 0
+        try {
+          adv = await importAdvBank({
+            signal: { cancelled: false },
+            progress: (done, total) => setProgress(Math.round((done / total) * 100)),
+          })
+        } catch {
+          adv = 0
+        }
         setProgress(100)
         setStage('done')
         pushToast(
           `${seeded} questions ready${imported ? ` + ${imported} real JEE PYQs` : ''}${
+            bank ? ` + ${bank} JEE Main bank` : ''
+          }${adv ? ` + ${adv} JEE Advanced` : ''}${
             curated ? ` + ${curated} curated` : ''
           }`,
           'success',
@@ -117,7 +147,7 @@ export function DataBootstrap({ children }: { children: React.ReactNode }) {
             {stage === 'seeding'
               ? 'Building the full-syllabus question set…'
               : stage === 'importing'
-                ? 'Importing real JEE PYQs…'
+                ? 'Importing real JEE questions…'
                 : stage === 'error'
                   ? 'Something went wrong'
                   : 'Almost ready…'}

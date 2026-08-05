@@ -7,6 +7,14 @@ import type { QuestionMeta } from '@/db'
 
 export { importRealQuestions, PYQ_SOURCE } from './importPyq'
 export {
+  importMainBank,
+  importAdvBank,
+  BANK_SOURCE,
+  ADV_SOURCE,
+  BANK_VERSION,
+  ADV_VERSION,
+} from './importBank'
+export {
   importCuratedQuestions,
   CURATED_QUESTIONS,
   CURATED_QUESTION_COUNT,

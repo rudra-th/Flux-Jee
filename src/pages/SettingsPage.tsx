@@ -4,7 +4,15 @@ import { useSettingsStore, applyTheme } from '@/stores/settingsStore'
 import { useUIStore } from '@/stores/uiStore'
 import type { ThemeId } from '@/types/settings'
 import { resetDatabase } from '@/db'
-import { seedDatabase, importRealQuestions, PYQ_SOURCE } from '@/db/seed'
+import {
+  seedDatabase,
+  importRealQuestions,
+  importMainBank,
+  importAdvBank,
+  PYQ_SOURCE,
+  BANK_SOURCE,
+  ADV_SOURCE,
+} from '@/db/seed'
 import { PageHeader } from '@/components/layout/AppShell'
 import { cn } from '@/utils/cn'
 
@@ -21,7 +29,7 @@ export default function SettingsPage() {
   const reset = useSettingsStore((s) => s.reset)
   const pushToast = useUIStore((s) => s.pushToast)
 
-  const [busy, setBusy] = useState<'seed' | 'import' | 'reset' | null>(null)
+  const [busy, setBusy] = useState<'seed' | 'import' | 'bank' | 'reset' | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
 
   const apply = (patch: Parameters<typeof set>[0]) => {
@@ -44,6 +52,17 @@ export default function SettingsPage() {
     try {
       const count = await importRealQuestions({ progress: () => {} })
       pushToast(`Imported ${count} real JEE PYQs`, 'success')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleImportBank = async () => {
+    setBusy('bank')
+    try {
+      const main = await importMainBank({ progress: () => {} })
+      const adv = await importAdvBank({ progress: () => {} })
+      pushToast(`Imported ${main + adv} real JEE questions`, 'success')
     } finally {
       setBusy(null)
     }
@@ -160,6 +179,18 @@ export default function SettingsPage() {
                 </p>
               </div>
               <Button size="sm" variant="outline" loading={busy === 'import'} onClick={() => void handleImportPyq()}>
+                <Icon name="download" size={14} /> Import
+              </Button>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-surface2 p-3">
+              <div>
+                <p className="text-sm font-medium text-text">Import Real JEE Main & Advanced Banks</p>
+                <p className="text-[11px] text-text3">
+                  {BANK_SOURCE.count} real JEE Main (AIEEE 2002–2024) + {ADV_SOURCE.count} real JEE Advanced
+                  (2016–2023) questions from {BANK_SOURCE.name} & {ADV_SOURCE.name}
+                </p>
+              </div>
+              <Button size="sm" variant="outline" loading={busy === 'bank'} onClick={() => void handleImportBank()}>
                 <Icon name="download" size={14} /> Import
               </Button>
             </div>
