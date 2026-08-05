@@ -1,41 +1,36 @@
 import { db } from '@/db'
 import type { Flashcard, FlashcardType } from '@/types/progress'
+import type { SubjectId } from '@/types/core'
 import { randomId } from '@/utils/cn'
 
-export interface AiCardInput {
+export interface NewFlashcardInput {
   type: FlashcardType
-  subject: 'physics' | 'chemistry' | 'mathematics'
-  chapter: string
+  subject: SubjectId
+  chapter?: string
   front: string
   back: string
+  tags?: string[]
 }
 
-/** Persists flashcards produced by the AI generator (idempotent per run). */
-export async function saveAiFlashcards(cards: AiCardInput[]): Promise<number> {
+/** Persists a manually created flashcard, due immediately in box 1. */
+export async function createFlashcard(input: NewFlashcardInput): Promise<string> {
   const now = new Date().toISOString()
-  let created = 0
-  for (const c of cards) {
-    const dup = await db.flashcards
-      .filter((x) => x.chapter === c.chapter && x.front === c.front)
-      .count()
-    if (dup) continue
-    const row: Flashcard = {
-      id: randomId('fc-'),
-      type: c.type,
-      subject: c.subject,
-      chapter: c.chapter,
-      front: c.front,
-      back: c.back,
-      tags: [c.chapter, 'AI'],
-      box: 1,
-      nextReviewAt: now,
-      repetitions: 0,
-      createdAt: now,
-    }
-    await db.flashcards.put(row)
-    created++
+  const id = randomId('fc-')
+  const row: Flashcard = {
+    id,
+    type: input.type,
+    subject: input.subject,
+    chapter: input.chapter,
+    front: input.front,
+    back: input.back,
+    tags: input.tags ?? [],
+    box: 1,
+    nextReviewAt: now,
+    repetitions: 0,
+    createdAt: now,
   }
-  return created
+  await db.flashcards.put(row)
+  return id
 }
 
 export async function generateFlashcardsFromQuestions(questionIds: string[]): Promise<number> {

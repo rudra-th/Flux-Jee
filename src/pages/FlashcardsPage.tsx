@@ -6,7 +6,7 @@ import { getDueFlashcards, reviewFlashcard, generateFlashcardsFromQuestions, get
 import { Latex } from '@/components/ui'
 import type { Flashcard } from '@/types/progress'
 import { PageHeader } from '@/components/layout/AppShell'
-import { GenerateCardsModal } from '@/components/ai/GenerateCardsModal'
+import { CreateCardModal } from '@/components/flashcards/CreateCardModal'
 
 const TYPE_TONE: Record<Flashcard['type'], 'info' | 'success' | 'warning' | 'danger' | 'muted'> = {
   formula: 'info',
@@ -21,7 +21,7 @@ export default function FlashcardsPage() {
   const [idx, setIdx] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [generating, setGenerating] = useState(false)
-  const [aiOpen, setAiOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const { data: stats } = useQuery({ queryKey: ['fc-stats'], queryFn: getFlashcardStats })
   const queryClient = useQueryClient()
@@ -70,11 +70,11 @@ export default function FlashcardsPage() {
         subtitle="Spaced repetition for concepts and formulas"
         action={
           <div className="flex gap-2">
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Icon name="plus" size={15} /> Create
+            </Button>
             <Button size="sm" variant="outline" loading={generating} onClick={() => void generate()}>
               <Icon name="sparkles" size={15} /> Generate from mistakes
-            </Button>
-            <Button size="sm" onClick={() => setAiOpen(true)}>
-              <Icon name="brain" size={15} /> AI Generate
             </Button>
           </div>
         }
@@ -100,8 +100,13 @@ export default function FlashcardsPage() {
         <EmptyState
           icon="layers"
           title={deck.length ? 'Deck complete!' : 'No cards due'}
-          description={deck.length ? 'All due cards reviewed. Come back tomorrow for more.' : 'Cards become due based on your spaced repetition schedule. Generate cards from your mistakes to get started.'}
-          action={deck.length ? undefined : <Button onClick={() => void generate()} loading={generating}><Icon name="sparkles" size={16} /> Generate from mistakes</Button>}
+          description={deck.length ? 'All due cards reviewed. Come back tomorrow for more.' : 'Cards become due based on your spaced repetition schedule. Create your own cards or generate them from your mistakes to get started.'}
+          action={deck.length ? undefined : (
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button onClick={() => setCreateOpen(true)}><Icon name="plus" size={16} /> Create flashcard</Button>
+              <Button variant="outline" onClick={() => void generate()} loading={generating}><Icon name="sparkles" size={16} /> Generate from mistakes</Button>
+            </div>
+          )}
         />
       ) : (
         <div className="mx-auto max-w-2xl">
@@ -154,14 +159,12 @@ export default function FlashcardsPage() {
         </div>
       )}
 
-      <GenerateCardsModal
-        open={aiOpen}
-        onClose={() => setAiOpen(false)}
-        onGenerated={(n) => {
-          if (n > 0) {
-            void refreshStats()
-            void loadDeck()
-          }
+      <CreateCardModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={() => {
+          void refreshStats()
+          void loadDeck()
         }}
       />
     </div>

@@ -154,8 +154,8 @@ export default function SettingsPage() {
                   <Icon name="brain" size={18} />
                 </span>
                 <div>
-                  <p className="text-sm font-medium text-text">Gemini AI</p>
-                  <p className="text-[11px] text-text3">AI flashcards &amp; the AI Tutor assistant</p>
+                  <p className="text-sm font-medium text-text">AI Tutor</p>
+                  <p className="text-[11px] text-text3">Step-by-step doubts &amp; explanations</p>
                 </div>
               </div>
               <AiStatusBadge />

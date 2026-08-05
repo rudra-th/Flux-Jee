@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react'
+import { memo, useMemo, type ReactNode } from 'react'
 import katex from 'katex'
 import { cn } from '@/utils/cn'
 
@@ -45,8 +45,9 @@ export const Latex = memo(function Latex({
 })
 
 /**
- * Renders text mixed with LaTeX using $...$ delimiters.
- * Falls back to MathJax-style plain rendering when delimiters are absent.
+ * Renders text mixed with LaTeX using `$...$`, `$$...$$`, `\(...\)` or
+ * `\[...\]` delimiters, plus light inline markdown (`**bold**`, `*italic*`).
+ * Falls back to plain rendering when no delimiters are present.
  */
 export const RichText = memo(function RichText({
   content,
@@ -55,41 +56,91 @@ export const RichText = memo(function RichText({
 }: {
   content: string
   className?: string
-  /** If true, split content on newlines into paragraphs */
+  /** If true, split content into paragraphs on blank lines (LaTeX blocks are kept whole) */
   paragraphs?: boolean
 }) {
   const segments = useMemo(() => parseContent(content), [content])
 
   if (paragraphs) {
-    const blocks = content.split(/\n+/).filter((b) => b.trim())
+    const blocks: Segment[][] = [[]]
+    for (const seg of segments) {
+      if (seg.kind === 'latex') {
+        blocks[blocks.length - 1]!.push(seg)
+      } else {
+        seg.content.split(/\n\s*\n/).forEach((part, i) => {
+          if (i > 0) blocks.push([])
+          if (part.trim()) blocks[blocks.length - 1]!.push({ kind: 'text', content: part, display: false })
+        })
+      }
+    }
+    const valid = blocks.filter((b) => b.length > 0)
     return (
       <div className={cn('space-y-2', className)}>
-        {blocks.map((b, i) => (
-          <p key={i}>
-            <RichText content={b} />
-          </p>
+        {valid.map((b, i) => (
+          <p key={i}>{renderSegments(b)}</p>
         ))}
       </div>
     )
   }
 
-  const first = segments[0]
-  if (segments.length === 1 && first?.kind === 'text') {
-    return <span className={cn('text-sm leading-relaxed', className)}>{content}</span>
-  }
-
-  return (
-    <span className={cn('inline text-sm leading-relaxed', className)}>
-      {segments.map((seg, i) =>
-        seg.kind === 'latex' ? (
-          <Latex key={i} latex={seg.content} display={seg.display} />
-        ) : (
-          <span key={i}>{seg.content}</span>
-        ),
-      )}
-    </span>
-  )
+  return <span className={cn('inline text-sm leading-relaxed', className)}>{renderSegments(segments)}</span>
 })
+
+function renderSegments(segments: Segment[]): ReactNode {
+  return segments.map((seg, i) =>
+    seg.kind === 'latex' ? (
+      <Latex key={i} latex={seg.content} display={seg.display} />
+    ) : (
+      <span key={i}>{renderInline(seg.content)}</span>
+    ),
+  )
+}
+
+/** Very light inline markdown: **bold**, *italic*, and `# heading`. */
+function renderInline(text: string): ReactNode {
+  let result: ReactNode = text
+  const trimmed = text.trimStart()
+  if (/^#{1,6}\s+/.test(trimmed)) {
+    const title = trimmed.replace(/^#{1,6}\s+/, '')
+    result = (
+      <span className="block font-semibold text-text">
+        {renderInlineMarkup(title)}
+      </span>
+    )
+    const leading = text.slice(0, text.length - trimmed.length)
+    return leading ? (
+      <>
+        {leading}
+        {result}
+      </>
+    ) : (
+      result
+    )
+  }
+  return renderInlineMarkup(text)
+}
+
+const MARKUP = /(\*\*[^*]+\*\*|\*[^*\n]+\*)/g
+
+function renderInlineMarkup(text: string): ReactNode {
+  const nodes: ReactNode[] = []
+  let last = 0
+  let key = 0
+  let m: RegExpExecArray | null
+  MARKUP.lastIndex = 0
+  while ((m = MARKUP.exec(text)) !== null) {
+    if (m.index > last) nodes.push(<span key={key++}>{text.slice(last, m.index)}</span>)
+    const token = m[0]
+    if (token.startsWith('**')) {
+      nodes.push(<strong key={key++}>{token.slice(2, -2)}</strong>)
+    } else {
+      nodes.push(<em key={key++}>{token.slice(1, -1)}</em>)
+    }
+    last = m.index + token.length
+  }
+  if (last < text.length) nodes.push(<span key={key++}>{text.slice(last)}</span>)
+  return nodes.length ? nodes : [text]
+}
 
 interface Segment {
   kind: 'text' | 'latex'
@@ -97,41 +148,58 @@ interface Segment {
   display: boolean
 }
 
-function parseContent(input: string): Segment[] {
-  if (!/\$/.test(input)) return [{ kind: 'text', content: input, display: false }]
-  const segments: Segment[] = []
-  let rest = input
-  while (rest.length > 0) {
-    const displayIdx = rest.indexOf('$$')
-    const inlineIdx = rest.indexOf('$')
+interface Delim {
+  open: string
+  close: string
+  display: boolean
+}
 
-    if (displayIdx === -1 && inlineIdx === -1) {
-      if (rest.trim()) segments.push({ kind: 'text', content: rest, display: false })
-      break
-    }
+const DELIMS: Delim[] = [
+  { open: '$$', close: '$$', display: true },
+  { open: '\\[', close: '\\]', display: true },
+  { open: '\\(', close: '\\)', display: false },
+  { open: '$', close: '$', display: false },
+]
 
-    const useDisplay = displayIdx !== -1 && (inlineIdx === -1 || displayIdx <= inlineIdx)
-    const open = useDisplay ? '$$' : '$'
-    const start = useDisplay ? displayIdx : inlineIdx
-    const closeIdx = rest.indexOf(open, start + open.length)
-
-    if (start > 0) {
-      const before = rest.slice(0, start)
-      if (before.trim()) segments.push({ kind: 'text', content: before, display: false })
-    }
-
-    if (closeIdx === -1) {
-      const restContent = rest.slice(start)
-      if (restContent.trim()) segments.push({ kind: 'text', content: restContent, display: false })
-      break
-    }
-
-    segments.push({
-      kind: 'latex',
-      content: rest.slice(start + open.length, closeIdx),
-      display: useDisplay,
-    })
-    rest = rest.slice(closeIdx + open.length)
+function detectOpen(input: string, i: number): Delim | null {
+  const two = input.slice(i, i + 2)
+  for (const d of DELIMS) {
+    if (two.startsWith(d.open)) return d
   }
-  return segments
+  return null
+}
+
+function parseContent(input: string): Segment[] {
+  if (!/[$\\]/.test(input)) return [{ kind: 'text', content: input, display: false }]
+
+  const segments: Segment[] = []
+  let i = 0
+  let textStart = 0
+
+  const flushText = (end: number) => {
+    if (end > textStart) {
+      const t = input.slice(textStart, end)
+      if (t.trim()) segments.push({ kind: 'text', content: t, display: false })
+    }
+  }
+
+  while (i < input.length) {
+    const d = detectOpen(input, i)
+    if (!d) {
+      i += 1
+      continue
+    }
+    const closeIdx = input.indexOf(d.close, i + d.open.length)
+    if (closeIdx === -1) {
+      i += 1
+      continue
+    }
+    flushText(i)
+    segments.push({ kind: 'latex', content: input.slice(i + d.open.length, closeIdx), display: d.display })
+    textStart = closeIdx + d.close.length
+    i = textStart
+  }
+  flushText(input.length)
+
+  return segments.length ? segments : [{ kind: 'text', content: input, display: false }]
 }

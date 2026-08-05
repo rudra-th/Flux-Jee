@@ -9,14 +9,6 @@ import { useSettingsStore } from '@/stores/settingsStore'
  * (localStorage) and forwarded via the `x-api-key` header for that request.
  */
 
-export type AiFlashcardType = 'concept' | 'formula' | 'reaction'
-
-export interface AiGeneratedCard {
-  type: AiFlashcardType
-  front: string
-  back: string
-}
-
 export interface TutorQuestionContext {
   text: string
   options?: Array<{ key: string; text: string }>
@@ -62,15 +54,6 @@ async function post<T>(url: string, body: unknown): Promise<T> {
     throw new AiError(data?.error ?? `Request failed (${res.status})`, res.status)
   }
   return data as T
-}
-
-export async function aiGenerateCards(req: {
-  subject: string
-  chapter: string
-  count?: number
-}): Promise<AiGeneratedCard[]> {
-  const data = await post<{ cards?: AiGeneratedCard[] }>('/api/ai/cards', req)
-  return data.cards ?? []
 }
 
 export async function aiTutorChat(req: {
