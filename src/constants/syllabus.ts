@@ -210,7 +210,25 @@ export const CHEMISTRY: Subject = {
       { id: 'hess-law', name: "Hess's Law" },
       { id: 'bond-energies', name: 'Bond Enthalpies' },
     ]},
-    { id: 'che-equilibrium', name: 'Equilibrium', order: 7, topics: [
+    { id: 'che-kinetics', name: 'Chemical Kinetics', order: 7, topics: [
+      { id: 'rate-of-reaction', name: 'Rate of Reaction' },
+      { id: 'rate-law', name: 'Rate Laws and Order' },
+      { id: 'integrated-rate-laws', name: 'Integrated Rate Laws' },
+      { id: 'arrhenius', name: 'Arrhenius Equation' },
+      { id: 'half-life', name: 'Half-Life' },
+    ]},
+    { id: 'che-surface', name: 'Surface Chemistry', order: 8, topics: [
+      { id: 'adsorption', name: 'Adsorption' },
+      { id: 'catalysis', name: 'Catalysis' },
+      { id: 'colloids', name: 'Colloids' },
+      { id: 'emulsions', name: 'Emulsions' },
+    ]},
+    { id: 'che-salt-analysis', name: 'Salt Analysis', order: 9, topics: [
+      { id: 'group-analysis', name: 'Group Analysis' },
+      { id: 'dry-tests', name: 'Dry Tests' },
+      { id: 'precipitation', name: 'Precipitation Reactions' },
+    ]},
+    { id: 'che-equilibrium', name: 'Equilibrium', order: 10, topics: [
       { id: 'chemical-equilibrium', name: 'Chemical Equilibrium' },
       { id: 'le-chatelier', name: "Le-Chatelier's Principle" },
       { id: 'ionic-equilibrium', name: 'Ionic Equilibrium' },
@@ -218,24 +236,24 @@ export const CHEMISTRY: Subject = {
       { id: 'solubility-product', name: 'Solubility Product' },
       { id: 'common-ion', name: 'Common Ion Effect' },
     ]},
-    { id: 'che-redox', name: 'Redox Reactions', order: 8, topics: [
+    { id: 'che-redox', name: 'Redox Reactions', order: 11, topics: [
       { id: 'redox', name: 'Oxidation Number' },
       { id: 'balancing-redox', name: 'Balancing Redox Equations' },
       { id: 'electrochemical-cells', name: 'Electrochemical Cells' },
       { id: 'nernst-equation', name: 'Nernst Equation' },
       { id: 'faraday-laws', name: "Faraday's Laws" },
     ]},
-    { id: 'che-hydrogen', name: 'Hydrogen', order: 9, topics: [
+    { id: 'che-hydrogen', name: 'Hydrogen', order: 12, topics: [
       { id: 'hydrogen', name: 'Hydrogen and Its Compounds' },
       { id: 'water', name: 'Water' },
       { id: 'h2o2', name: 'Hydrogen Peroxide' },
     ]},
-    { id: 'che-sblock', name: 's-Block Elements', order: 10, topics: [
+    { id: 'che-sblock', name: 's-Block Elements', order: 13, topics: [
       { id: 'alkali-metals', name: 'Alkali Metals' },
       { id: 'alkaline-earth', name: 'Alkaline Earth Metals' },
       { id: 'sblock-compounds', name: 'Important Compounds' },
     ]},
-    { id: 'che-pblock', name: 'p-Block Elements', order: 11, topics: [
+    { id: 'che-pblock', name: 'p-Block Elements', order: 14, topics: [
       { id: 'boron-family', name: 'Boron Family' },
       { id: 'carbon-family', name: 'Carbon Family' },
       { id: 'nitrogen-family', name: 'Nitrogen Family' },
@@ -243,13 +261,13 @@ export const CHEMISTRY: Subject = {
       { id: 'halogens', name: 'Halogens' },
       { id: 'noble-gases', name: 'Noble Gases' },
     ]},
-    { id: 'che-dfblock', name: 'd and f-Block Elements', order: 12, topics: [
+    { id: 'che-dfblock', name: 'd and f-Block Elements', order: 15, topics: [
       { id: 'transition-metals', name: 'Transition Metals' },
       { id: 'dblock-properties', name: 'Properties of d-Block' },
       { id: 'lanthanoids', name: 'Lanthanoids' },
       { id: 'actinoids', name: 'Actinoids' },
     ]},
-    { id: 'che-coordination', name: 'Coordination Compounds', order: 13, topics: [
+    { id: 'che-coordination', name: 'Coordination Compounds', order: 16, topics: [
       { id: 'coordination-basics', name: 'Coordination Basics' },
       { id: 'werners-theory', name: "Werner's Theory" },
       { id: 'iupac-coordination', name: 'IUPAC Nomenclature' },
@@ -257,12 +275,12 @@ export const CHEMISTRY: Subject = {
       { id: 'cft', name: 'Crystal Field Theory' },
       { id: 'vbt', name: 'Valence Bond Theory' },
     ]},
-    { id: 'che-environmental', name: 'Environmental Chemistry', order: 14, topics: [
+    { id: 'che-environmental', name: 'Environmental Chemistry', order: 17, topics: [
       { id: 'pollution', name: 'Pollution' },
       { id: 'greenhouse', name: 'Greenhouse Effect' },
       { id: 'water-treatment', name: 'Water Treatment' },
     ]},
-    { id: 'che-organic-basics', name: 'Organic Chemistry Basics', order: 15, topics: [
+    { id: 'che-organic-basics', name: 'Organic Chemistry Basics', order: 18, topics: [
       { id: 'purification', name: 'Purification Techniques' },
       { id: 'iupac-organic', name: 'IUPAC Nomenclature' },
       { id: 'isomerism', name: 'Isomerism' },
@@ -271,43 +289,43 @@ export const CHEMISTRY: Subject = {
       { id: 'reaction-mechanism', name: 'Reaction Intermediates' },
       { id: 'stereochemistry', name: 'Stereochemistry' },
     ]},
-    { id: 'che-hydrocarbons', name: 'Hydrocarbons', order: 16, topics: [
+    { id: 'che-hydrocarbons', name: 'Hydrocarbons', order: 19, topics: [
       { id: 'alkanes', name: 'Alkanes' },
       { id: 'alkenes', name: 'Alkenes' },
       { id: 'alkynes', name: 'Alkynes' },
       { id: 'aromatic', name: 'Aromatic Hydrocarbons' },
     ]},
-    { id: 'che-halogen', name: 'Haloalkanes and Haloarenes', order: 17, topics: [
+    { id: 'che-halogen', name: 'Haloalkanes and Haloarenes', order: 20, topics: [
       { id: 'haloalkanes', name: 'Haloalkanes' },
       { id: 'haloarenes', name: 'Haloarenes' },
       { id: 'sn-reactions', name: 'SN1 and SN2' },
     ]},
-    { id: 'che-oxygen', name: 'Alcohols, Phenols and Ethers', order: 18, topics: [
+    { id: 'che-oxygen', name: 'Alcohols, Phenols and Ethers', order: 21, topics: [
       { id: 'alcohols', name: 'Alcohols' },
       { id: 'phenols', name: 'Phenols' },
       { id: 'ethers', name: 'Ethers' },
     ]},
-    { id: 'che-carbonyl', name: 'Aldehydes, Ketones and Acids', order: 19, topics: [
+    { id: 'che-carbonyl', name: 'Aldehydes, Ketones and Acids', order: 22, topics: [
       { id: 'aldehydes', name: 'Aldehydes' },
       { id: 'ketones', name: 'Ketones' },
       { id: 'carboxylic-acids', name: 'Carboxylic Acids' },
       { id: 'nucleophilic-addition', name: 'Nucleophilic Addition' },
     ]},
-    { id: 'che-amines', name: 'Amines', order: 20, topics: [
+    { id: 'che-amines', name: 'Amines', order: 23, topics: [
       { id: 'amines', name: 'Amines' },
       { id: 'diazonium', name: 'Diazonium Salts' },
     ]},
-    { id: 'che-biomolecules', name: 'Biomolecules', order: 21, topics: [
+    { id: 'che-biomolecules', name: 'Biomolecules', order: 24, topics: [
       { id: 'carbohydrates', name: 'Carbohydrates' },
       { id: 'proteins', name: 'Proteins and Amino Acids' },
       { id: 'vitamins', name: 'Vitamins' },
       { id: 'nucleic-acids', name: 'Nucleic Acids' },
     ]},
-    { id: 'che-polymers', name: 'Polymers', order: 22, topics: [
+    { id: 'che-polymers', name: 'Polymers', order: 25, topics: [
       { id: 'polymers', name: 'Polymer Types' },
       { id: 'polymerisation', name: 'Polymerisation' },
     ]},
-    { id: 'che-everyday', name: 'Chemistry in Everyday Life', order: 23, topics: [
+    { id: 'che-everyday', name: 'Chemistry in Everyday Life', order: 26, topics: [
       { id: 'drugs', name: 'Drugs and Medicines' },
       { id: 'food-preservatives', name: 'Food Preservatives' },
       { id: 'cleansing', name: 'Cleansing Agents' },
