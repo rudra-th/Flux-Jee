@@ -5,13 +5,16 @@ import { useUIStore } from '@/stores/uiStore'
 import type { ThemeId } from '@/types/settings'
 import { resetDatabase } from '@/db'
 import {
-  seedDatabase,
   importRealQuestions,
   importMainBank,
   importAdvBank,
+  import2025Questions,
+  importMmjeeQuestions,
   PYQ_SOURCE,
   BANK_SOURCE,
   ADV_SOURCE,
+  J2025_SOURCE,
+  MMJEE_SOURCE,
 } from '@/db/seed'
 import { PageHeader } from '@/components/layout/AppShell'
 import { cn } from '@/utils/cn'
@@ -31,22 +34,12 @@ export default function SettingsPage() {
   const reset = useSettingsStore((s) => s.reset)
   const pushToast = useUIStore((s) => s.pushToast)
 
-  const [busy, setBusy] = useState<'seed' | 'import' | 'bank' | 'reset' | null>(null)
+  const [busy, setBusy] = useState<'import' | 'bank' | 'reset' | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
 
   const apply = (patch: Parameters<typeof set>[0]) => {
     set(patch)
     applyTheme({ ...settings, ...patch })
-  }
-
-  const handleSeed = async () => {
-    setBusy('seed')
-    try {
-      const count = await seedDatabase({ perTopic: 4, progress: () => {} })
-      pushToast(`Seeded ${count} questions`, 'success')
-    } finally {
-      setBusy(null)
-    }
   }
 
   const handleImportPyq = async () => {
@@ -65,6 +58,17 @@ export default function SettingsPage() {
       const main = await importMainBank({ progress: () => {} })
       const adv = await importAdvBank({ progress: () => {} })
       pushToast(`Imported ${main + adv} real JEE questions`, 'success')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleImport2025 = async () => {
+    setBusy('bank')
+    try {
+      const j2025 = await import2025Questions({ progress: () => {} })
+      const mmjee = await importMmjeeQuestions({ progress: () => {} })
+      pushToast(`Imported ${j2025 + mmjee} real JEE questions`, 'success')
     } finally {
       setBusy(null)
     }
@@ -207,15 +211,6 @@ export default function SettingsPage() {
           <div className="space-y-3 px-5 pb-5">
             <div className="flex items-center justify-between gap-3 rounded-xl bg-surface2 p-3">
               <div>
-                <p className="text-sm font-medium text-text">Seed Question Bank</p>
-                <p className="text-[11px] text-text3">Generate practice questions for the full syllabus</p>
-              </div>
-              <Button size="sm" variant="outline" loading={busy === 'seed'} onClick={() => void handleSeed()}>
-                <Icon name="download" size={14} /> Seed
-              </Button>
-            </div>
-            <div className="flex items-center justify-between gap-3 rounded-xl bg-surface2 p-3">
-              <div>
                 <p className="text-sm font-medium text-text">Import Real JEE PYQs</p>
                 <p className="text-[11px] text-text3">
                   {PYQ_SOURCE.count} real JEE Main questions from {PYQ_SOURCE.name} ({PYQ_SOURCE.license})
@@ -234,6 +229,18 @@ export default function SettingsPage() {
                 </p>
               </div>
               <Button size="sm" variant="outline" loading={busy === 'bank'} onClick={() => void handleImportBank()}>
+                <Icon name="download" size={14} /> Import
+              </Button>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-surface2 p-3">
+              <div>
+                <p className="text-sm font-medium text-text">Import Real JEE Main 2025 & JEE Advanced (2026)</p>
+                <p className="text-[11px] text-text3">
+                  {J2025_SOURCE.count} real JEE Main 2025 (Jan) + {MMJEE_SOURCE.count} real JEE Advanced
+                  (2019–2026) questions from {J2025_SOURCE.name} & {MMJEE_SOURCE.name}
+                </p>
+              </div>
+              <Button size="sm" variant="outline" loading={busy === 'bank'} onClick={() => void handleImport2025()}>
                 <Icon name="download" size={14} /> Import
               </Button>
             </div>

@@ -1,26 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
 import { db } from '@/db'
 import {
-  seedDatabase,
   importRealQuestions,
-  importCuratedQuestions,
   importMainBank,
   importAdvBank,
+  import2025Questions,
+  importMmjeeQuestions,
 } from '@/db/seed'
 import { useUIStore } from '@/stores/uiStore'
 import { applyTheme, useSettingsStore } from '@/stores/settingsStore'
 
-const SEED_PER_TOPIC = 6
-
-type Stage = 'checking' | 'seeding' | 'importing' | 'done' | 'error'
+type Stage = 'checking' | 'importing' | 'done' | 'error'
 
 /**
  * Ensures the local question database is populated before the app renders.
- * Runs once: seeds the full-syllabus generated bank, then imports the bundled
- * real JEE banks (eQOURSE PYQ, Grafite JEE Main, JEEBench Advanced, curated).
- * These steps are resilient — if an import fails the generated bank is still
- * enough to run every mode. A progress screen prevents users from ever landing
- * on an empty app.
+ * Runs once: imports the bundled real JEE banks (eQOURSE PYQ, Grafite JEE Main,
+ * JEEBench Advanced, JEE Main 2025, mmJEE-Eval Advanced). These steps are
+ * resilient — if an import fails the app still works with whatever loaded.
+ * A progress screen prevents users from ever landing on an empty app.
  */
 export function DataBootstrap({ children }: { children: React.ReactNode }) {
   const [stage, setStage] = useState<Stage>('checking')
@@ -43,34 +40,30 @@ export function DataBootstrap({ children }: { children: React.ReactNode }) {
       try {
         const count = await db.questions.count()
         if (count > 0) {
-          // Existing database: run the additive curated + real-bank imports in
-          // the background so every install gets the new question types.
+          // Existing database: run the additive real-bank imports in the
+          // background so every install gets the latest bundled questions.
           setStage('done')
           Promise.allSettled([
-            importCuratedQuestions(),
+            importRealQuestions(),
             importMainBank(),
             importAdvBank(),
-          ]).then(([curated, bank, adv]) => {
+            import2025Questions(),
+            importMmjeeQuestions(),
+          ]).then(([pyq, bank, adv, j2025, mmjee]) => {
             const total =
-              (curated.status === 'fulfilled' ? curated.value : 0) +
+              (pyq.status === 'fulfilled' ? pyq.value : 0) +
               (bank.status === 'fulfilled' ? bank.value : 0) +
-              (adv.status === 'fulfilled' ? adv.value : 0)
+              (adv.status === 'fulfilled' ? adv.value : 0) +
+              (j2025.status === 'fulfilled' ? j2025.value : 0) +
+              (mmjee.status === 'fulfilled' ? mmjee.value : 0)
             if (total > 0) pushToast(`${total} questions added`, 'success')
           })
           return
         }
         setNeedsBootstrap(true)
-        setStage('seeding')
-
-        const seeded = await seedDatabase({
-          perTopic: SEED_PER_TOPIC,
-          signal: { cancelled: false },
-          progress: (done, total) => setProgress(Math.round((done / total) * 100)),
-        })
-        setProgress(100)
-
         setStage('importing')
         setProgress(0)
+
         let imported = 0
         try {
           imported = await importRealQuestions({
@@ -78,14 +71,7 @@ export function DataBootstrap({ children }: { children: React.ReactNode }) {
             progress: (done, total) => setProgress(Math.round((done / total) * 100)),
           })
         } catch {
-          // Network import failed — the generated bank is sufficient.
           imported = 0
-        }
-        let curated = 0
-        try {
-          curated = await importCuratedQuestions()
-        } catch {
-          curated = 0
         }
         let bank = 0
         try {
@@ -105,14 +91,32 @@ export function DataBootstrap({ children }: { children: React.ReactNode }) {
         } catch {
           adv = 0
         }
+        let j2025 = 0
+        try {
+          j2025 = await import2025Questions({
+            signal: { cancelled: false },
+            progress: (done, total) => setProgress(Math.round((done / total) * 100)),
+          })
+        } catch {
+          j2025 = 0
+        }
+        let mmjee = 0
+        try {
+          mmjee = await importMmjeeQuestions({
+            signal: { cancelled: false },
+            progress: (done, total) => setProgress(Math.round((done / total) * 100)),
+          })
+        } catch {
+          mmjee = 0
+        }
         setProgress(100)
         setStage('done')
         pushToast(
-          `${seeded} questions ready${imported ? ` + ${imported} real JEE PYQs` : ''}${
-            bank ? ` + ${bank} JEE Main bank` : ''
-          }${adv ? ` + ${adv} JEE Advanced` : ''}${
-            curated ? ` + ${curated} curated` : ''
-          }`,
+          `${imported} real JEE PYQs${bank ? ` + ${bank} JEE Main bank` : ''}${
+            adv ? ` + ${adv} JEE Advanced` : ''
+          }${j2025 ? ` + ${j2025} JEE Main 2025` : ''}${
+            mmjee ? ` + ${mmjee} mmJEE-Eval` : ''
+          } ready`,
           'success',
         )
       } catch (err) {
@@ -144,13 +148,11 @@ export function DataBootstrap({ children }: { children: React.ReactNode }) {
           </div>
           <h1 className="text-lg font-bold text-text">Preparing your question bank</h1>
           <p className="mt-1 text-sm text-text2">
-            {stage === 'seeding'
-              ? 'Building the full-syllabus question set…'
-              : stage === 'importing'
-                ? 'Importing real JEE questions…'
-                : stage === 'error'
-                  ? 'Something went wrong'
-                  : 'Almost ready…'}
+            {stage === 'importing'
+              ? 'Importing real JEE questions…'
+              : stage === 'error'
+                ? 'Something went wrong'
+                : 'Almost ready…'}
           </p>
         </div>
 

@@ -7,7 +7,7 @@ import {
   getDailyChallenge,
 } from '@/engines/questionEngine/selector'
 import type { QuestionFilters } from '@/types/question'
-import { seedDatabase, ensureSeeded, importRealQuestions } from '@/db/seed'
+import { ensureSeeded, importRealQuestions } from '@/db/seed'
 import { useUIStore } from '@/stores/uiStore'
 
 export const QK = {
@@ -59,21 +59,6 @@ export function useSeededStatus() {
     queryFn: ensureSeeded,
     staleTime: Infinity,
   })
-}
-
-export function useSeedDatabase() {
-  const queryClient = useQueryClient()
-  const pushToast = useUIStore((s) => s.pushToast)
-
-  return async (perTopic = 4) => {
-    const count = await seedDatabase({
-      perTopic,
-      progress: () => {},
-    })
-    await queryClient.invalidateQueries()
-    pushToast(`Seeded database with ${count} questions`, 'success')
-    return count
-  }
 }
 
 export function useImportPyq() {
