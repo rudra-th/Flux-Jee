@@ -1,4 +1,4 @@
-import { json, readKey } from '../_shared.ts'
+import { json, readKey } from '../_shared.js'
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'GET') return json(405, { error: 'Method not allowed' })

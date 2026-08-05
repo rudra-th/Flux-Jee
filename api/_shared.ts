@@ -1,3 +1,4 @@
+/// <reference types="node" />
 /**
  * Shared serverless helpers for the Gemini AI endpoints.
  *

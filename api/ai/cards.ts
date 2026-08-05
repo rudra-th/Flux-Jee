@@ -1,4 +1,4 @@
-import { json, readKey, clientIp, rateLimited, callGemini, MODEL } from '../_shared.ts'
+import { json, readKey, clientIp, rateLimited, callGemini, MODEL } from '../_shared.js'
 
 export const config = { maxDuration: 30 }
 
