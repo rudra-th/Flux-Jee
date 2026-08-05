@@ -49,7 +49,7 @@ export default function TutorPage() {
           {
             role: 'assistant',
             content:
-              'The AI assistant is not configured on this deployment yet. Add a GEMINI_API_KEY in the project settings (or your own key in Settings → AI) and try again.',
+              'The AI assistant is not configured on this deployment yet. Add a server AI key in the project settings (or your own Gemini key in Settings → AI) and try again.',
           },
         ])
       } else if (err instanceof AiError) {

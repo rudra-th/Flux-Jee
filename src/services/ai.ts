@@ -3,10 +3,10 @@ import { useSettingsStore } from '@/stores/settingsStore'
 /**
  * Client-side wrapper for the AI serverless endpoints.
  *
- * The server key is kept in `process.env.GEMINI_API_KEY` on the backend and is
- * never shipped to the browser. If the user provides their own key in
- * Settings it is stored only in their browser (localStorage) and forwarded via
- * the `x-api-key` header for that request.
+ * The server key is kept in env vars on the backend (AI_PROVIDER + the
+ * provider's key) and is never shipped to the browser. If the user provides
+ * their own Gemini key in Settings it is stored only in their browser
+ * (localStorage) and forwarded via the `x-api-key` header for that request.
  */
 
 export type AiFlashcardType = 'concept' | 'formula' | 'reaction'
@@ -81,14 +81,19 @@ export async function aiTutorChat(req: {
   return data.reply ?? ''
 }
 
-export async function aiHealth(): Promise<{ configured: boolean }> {
+export interface AiHealth {
+  configured: boolean
+  provider?: string | null
+}
+
+export async function aiHealth(): Promise<AiHealth> {
   try {
     const res = await fetch('/api/ai/health')
     if (!res.ok) return { configured: false }
-    const data = (await res.json()) as { configured?: boolean }
-    return { configured: Boolean(data.configured) }
+    const data = (await res.json()) as { configured?: boolean; provider?: string | null }
+    return { configured: Boolean(data.configured), provider: data.provider ?? null }
   } catch {
-    return { configured: false }
+    return { configured: false, provider: null }
   }
 }
 

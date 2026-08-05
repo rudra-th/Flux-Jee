@@ -1,4 +1,4 @@
-import { json, readKey, clientIp, rateLimited, callGemini, MODEL } from '../_shared.js'
+import { json, readKey, clientIp, rateLimited, callAI, providerLabel } from '../_shared.js'
 
 export const config = { maxDuration: 30 }
 
@@ -68,7 +68,7 @@ export async function POST(req: Request): Promise<Response> {
 
   let reply: string
   try {
-    reply = (await callGemini(key, system, prompt, { temperature: 0.3 })) as string
+    reply = (await callAI(key, system, prompt, { temperature: 0.3 })) as string
   } catch (err) {
     const status = (err as Error & { status?: number }).status ?? 500
     return json(status >= 400 && status < 500 ? 502 : 500, {
@@ -76,5 +76,5 @@ export async function POST(req: Request): Promise<Response> {
     })
   }
 
-  return json(200, { model: MODEL, reply })
+  return json(200, { provider: providerLabel(), reply })
 }

@@ -305,9 +305,11 @@ function ThemeSwatch({ id, active }: { id: ThemeId; active: boolean }) {
 function AiStatusBadge() {
   const { data } = useQuery({ queryKey: ['ai-health'], queryFn: aiHealth, retry: false })
   const configured = data?.configured ?? false
-  return configured ? (
-    <Badge tone="success">Server key configured</Badge>
-  ) : (
-    <Badge tone="warning">Not configured</Badge>
+  if (!configured) return <Badge tone="warning">Not configured</Badge>
+  const provider = data?.provider ?? 'Gemini'
+  return (
+    <Badge tone="success">
+      {provider} server key configured
+    </Badge>
   )
 }

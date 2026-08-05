@@ -1,4 +1,4 @@
-import { json, readKey, clientIp, rateLimited, callGemini, MODEL } from '../_shared.js'
+import { json, readKey, clientIp, rateLimited, callAI, providerLabel } from '../_shared.js'
 
 export const config = { maxDuration: 30 }
 
@@ -44,7 +44,7 @@ export async function POST(req: Request): Promise<Response> {
 
   let data: { cards?: Array<{ type?: string; front?: string; back?: string }> }
   try {
-    data = (await callGemini(key, system, user, { json: true })) as typeof data
+    data = (await callAI(key, system, user, { json: true })) as typeof data
   } catch (err) {
     const status = (err as Error & { status?: number }).status ?? 500
     return json(status >= 400 && status < 500 ? 502 : 500, {
@@ -62,5 +62,5 @@ export async function POST(req: Request): Promise<Response> {
     .slice(0, count)
 
   if (cards.length === 0) return json(502, { error: 'The model returned no usable flashcards.' })
-  return json(200, { model: MODEL, cards })
+  return json(200, { provider: providerLabel(), cards })
 }
