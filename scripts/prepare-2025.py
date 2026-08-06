@@ -3,7 +3,7 @@
       * CK0607/2025-Jee-Mains-Question (250 Math Jan 2025)
       * hymanshu/jee_mains_2025_shift1 (Physics/Chemistry only)
   - public/data/jee-mmjee.json (JEE Advanced 2019-2026, image-based)
-      * ArkaMukherjee/mmJEE-Eval (English subset; images -> public/data/images/mmjee/)
+      * ArkaMukherjee/mmJEE-Eval (English subset; images -> public/images/mmjee/)
 
 Usage: python scripts/prepare-2025.py
 Requires: pyarrow
@@ -21,7 +21,7 @@ from chapter_infer import infer_chapter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(ROOT, "public", "data")
-IMG_DIR = os.path.join(DATA_DIR, "images", "mmjee")
+IMG_DIR = os.path.join(ROOT, "public", "images", "mmjee")
 SRC_DIR = r"C:\Users\Asus\AppData\Local\Temp\opencode\jee-data"
 CK0607_CSV = os.path.join(SRC_DIR, "ck0607_2025.csv")
 HYMANSHU_PARQUET = os.path.join(SRC_DIR, "hymanshu2025s1.parquet")
@@ -303,7 +303,7 @@ def main():
     h2025, s2 = parse_hymanshu()
     mmjee, s3 = parse_mmjee()
 
-    # Copy mmJEE images from the parquet into public/data/images/mmjee/.
+    # Copy mmJEE images from the parquet into public/images/mmjee/.
     df = pq.read_table(MMJEE_PARQUET).to_pandas()
     img_map = {}
     for _, r in df.iterrows():
