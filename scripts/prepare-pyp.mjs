@@ -15,8 +15,9 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const SRC_DIR = process.argv[2] ?? 'C:\\Users\\Asus\\AppData\\Local\\Temp\\opencode\\jee-data\\hf'
-const ADV_SRC_DIR = process.argv[3] ?? 'C:\\Users\\Asus\\AppData\\Local\\Temp\\opencode\\jee-data\\hf-adv'
+const JEE_DATA_DIR = process.env.JEE_DATA_DIR ?? 'C:\\Users\\Asus\\AppData\\Local\\Temp\\opencode\\jee-data'
+const SRC_DIR = process.argv[2] ?? join(JEE_DATA_DIR, 'hf')
+const ADV_SRC_DIR = process.argv[3] ?? join(JEE_DATA_DIR, 'hf-adv')
 const OUT_DIR = join(ROOT, 'public', 'data')
 const OUT_FILE = join(OUT_DIR, 'jee-pyp.json')
 
@@ -496,7 +497,7 @@ function numericFromAnswer(raw) {
   let s = String(raw).trim()
   if (!s) return null
   // Drop parenthetical groups that hold no digits (e.g. "(zero)").
-  s = s.replace(/\([^0-9.\-]*\)/g, '')
+  s = s.replace(/\([^0-9.-]*\)/g, '')
   // Strip LaTeX markers, backslash continuations, hashes, parens, whitespace.
   s = s.replace(/[$\\()#\s]/g, '')
   // Strip leading stray list punctuation (e.g. ". 2520.00").

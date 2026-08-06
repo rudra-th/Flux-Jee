@@ -7,14 +7,12 @@ export function Timer({
   remaining,
   total,
   running,
-  onAutoSubmit,
   paused = false,
   warnings = [600, 300, 120, 60, 10],
 }: {
   remaining: number
   total: number
   running: boolean
-  onAutoSubmit: () => void
   paused?: boolean
   warnings?: number[]
 }) {

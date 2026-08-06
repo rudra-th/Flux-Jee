@@ -42,7 +42,7 @@ function writeMarker(key: string, version: number) {
 }
 
 function buildMeta(questions: Question[]): QuestionMetadata[] {
-  return questions.map((q, i) => {
+  return questions.map((q) => {
     const h = hash(q.id)
     return {
       id: q.id,

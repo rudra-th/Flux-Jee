@@ -20,8 +20,9 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(ROOT, "public", "data")
-DEFAULT_GRAFITE = r"C:\Users\Asus\AppData\Local\Temp\opencode\jee-data\new\grafite.parquet"
-DEFAULT_BENCH = r"C:\Users\Asus\AppData\Local\Temp\opencode\jee-data\jeebench-test.json"
+DEFAULT_JEE_DATA = os.environ.get("JEE_DATA_DIR", r"C:\Users\Asus\AppData\Local\Temp\opencode\jee-data")
+DEFAULT_GRAFITE = os.path.join(DEFAULT_JEE_DATA, "new", "grafite.parquet")
+DEFAULT_BENCH = os.path.join(DEFAULT_JEE_DATA, "jeebench-test.json")
 
 SUBJECT_ID = {"physics": "physics", "chemistry": "chemistry", "maths": "mathematics"}
 SUBJECT_ID_ADV = {"phy": "physics", "chem": "chemistry", "math": "mathematics"}

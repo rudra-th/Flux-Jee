@@ -162,12 +162,12 @@ export default function TestRunner() {
     [config, answers],
   )
 
-  doSubmitRef.current = () => doSubmit(false)
-
   const handleAutoSubmit = useCallback(() => {
     pushToast('Time is up! The test is being submitted automatically.', 'warning')
     return doSubmit(true)
   }, [doSubmit, pushToast])
+
+  doSubmitRef.current = handleAutoSubmit
 
   // Pause overlay countdown
   const handlePause = () => {
@@ -279,7 +279,6 @@ export default function TestRunner() {
             remaining={timeRemaining}
             total={config.durationSeconds}
             running={phase === 'running'}
-            onAutoSubmit={() => void handleAutoSubmit()}
             paused={phase === 'paused'}
           />
         </div>

@@ -27,7 +27,7 @@ export async function importRealQuestions(opts: ImportOptions = {}): Promise<num
   if (!res.ok) throw new Error(`Failed to load question bank (${res.status})`)
   const questions = (await res.json()) as Question[]
 
-  const meta: QuestionMetadata[] = questions.map((q, i) => {
+  const meta: QuestionMetadata[] = questions.map((q) => {
     const h = hash(q.id)
     return {
       id: q.id,

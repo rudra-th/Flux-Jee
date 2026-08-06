@@ -22,7 +22,7 @@ from chapter_infer import infer_chapter
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(ROOT, "public", "data")
 IMG_DIR = os.path.join(ROOT, "public", "images", "mmjee")
-SRC_DIR = r"C:\Users\Asus\AppData\Local\Temp\opencode\jee-data"
+SRC_DIR = os.environ.get("JEE_DATA_DIR", r"C:\Users\Asus\AppData\Local\Temp\opencode\jee-data")
 CK0607_CSV = os.path.join(SRC_DIR, "ck0607_2025.csv")
 HYMANSHU_PARQUET = os.path.join(SRC_DIR, "hymanshu2025s1.parquet")
 MMJEE_PARQUET = os.path.join(SRC_DIR, "mmjee", "train.parquet")
