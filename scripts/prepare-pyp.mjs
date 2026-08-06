@@ -20,6 +20,144 @@ const ADV_SRC_DIR = process.argv[3] ?? 'C:\\Users\\Asus\\AppData\\Local\\Temp\\o
 const OUT_DIR = join(ROOT, 'public', 'data')
 const OUT_FILE = join(OUT_DIR, 'jee-pyp.json')
 
+// Shared keyword chapter inference — single source of truth with
+// scripts/chapter_infer.py (scripts/chapter_keywords.json).
+const KEYWORDS = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'chapter_keywords.json'), 'utf8'),
+)
+
+// eQOURSE subtopics that appear on rows whose topic is blank or a branch label
+// ("Physical Chemistry" / "Organic Chemistry" / "Inorganic Chemistry") -> app chapter name.
+const SUBTOPIC_MAP = {
+  chemistry: {
+    'Ionic Equilibrium': 'Equilibrium',
+    'BCC& Density': 'States of Matter',
+    'Simple Cubic Structure & BCC': 'States of Matter',
+    'HCP & CCP structures': 'States of Matter',
+    Voids: 'States of Matter',
+    'Redox Reaction': 'Redox Reactions',
+    'Redox reaction': 'Redox Reactions',
+    Electrochemistry: 'Redox Reactions',
+    'Atomic Structure': 'Structure of Atom',
+    Thermodynamics: 'Chemical Thermodynamics',
+    'Chemical & Ionic Eqilibrium': 'Equilibrium',
+    'Chemical Equilibrium': 'Equilibrium',
+    'Chemical Bonding': 'Chemical Bonding',
+    'Mole Concept': 'Some Basic Concepts of Chemistry',
+    'Ideal Gases': 'States of Matter',
+    'Some Basic Concepts of Chemistry': 'Some Basic Concepts of Chemistry',
+    'Periodic Table': 'Classification and Periodicity',
+    Hydrocarbon: 'Hydrocarbons',
+    ALKANE: 'Hydrocarbons',
+    ALKYNE: 'Hydrocarbons',
+    'Aromatic Compounds': 'Hydrocarbons',
+    'Chemistry in everyday life': 'Chemistry in Everyday Life',
+    'Aldehydes, Ketones & Carboxylic Acids': 'Aldehydes, Ketones and Acids',
+    'Aldehyde Ketone & Carboxylic acid': 'Aldehydes, Ketones and Acids',
+    Biomolecules: 'Biomolecules',
+    'Alcohols, Phenols and Ethers': 'Alcohols, Phenols and Ethers',
+    'Stability of Resonating Structures and different species': 'Organic Chemistry Basics',
+    'HALOALKANES & HALOARENES': 'Haloalkanes and Haloarenes',
+    'Inductive effect': 'Organic Chemistry Basics',
+    'IUPAC Nomenclature': 'Organic Chemistry Basics',
+    'Organic Reaction mechanisms-I': 'Organic Chemistry Basics',
+    'Steric Inhibition of Resonance (SIR Effect)': 'Organic Chemistry Basics',
+    'Environmental Chemistry': 'Environmental Chemistry',
+    'Some Basic Principles and Techniques': 'Organic Chemistry Basics',
+    Metallurgy: 'd and f-Block Elements',
+    'P-block Halogen': 'p-Block Elements',
+    'P-Block Element': 'p-Block Elements',
+    'P-block': 'p-Block Elements',
+    'p-block elements': 'p-Block Elements',
+    'P-block nitrogen': 'p-Block Elements',
+    'p block': 'p-Block Elements',
+    'D & F -Block Elements': 'd and f-Block Elements',
+    'Periodic Properties': 'Classification and Periodicity',
+    'Periodic properties': 'Classification and Periodicity',
+    'Hydrogen And Its Compound': 'Hydrogen',
+    Qualitative: 'Salt Analysis',
+    Quatitative: 'Salt Analysis',
+    'Periodic table': 'Classification and Periodicity',
+  },
+  mathematics: {
+    'Area of triangle': 'Coordinate Geometry',
+    'Centroid of triangle': 'Coordinate Geometry',
+    'Centroid formula': 'Coordinate Geometry',
+    'Equation of sides': 'Coordinate Geometry',
+    'Length of median': 'Coordinate Geometry',
+    'Medians of triangle': 'Coordinate Geometry',
+    'Angle bisectors': 'Coordinate Geometry',
+    'Types of triangle': 'Trigonometry',
+    'Tangent formula': 'Trigonometry',
+    'Properties of triangles': 'Trigonometry',
+    'Sine rule': 'Trigonometry',
+    'Sine formula': 'Trigonometry',
+    'Cosine formula': 'Trigonometry',
+    'Circumradius': 'Trigonometry',
+    'Circumradius of triangle': 'Trigonometry',
+    'Circumcircle of a triangle': 'Trigonometry',
+    'Inradius': 'Trigonometry',
+    'Inradius and circumradius': 'Trigonometry',
+    'Ex-radii': 'Trigonometry',
+    'Incentre of triangl': 'Trigonometry',
+    'Radius of triangle': 'Trigonometry',
+    'Relation between area anf radius of triangle': 'Trigonometry',
+    "Direct formulae's": 'Trigonometry',
+  },
+  physics: {
+    'Elongation in rod due to unbalanced force': 'Properties of Solids and Fluids',
+  },
+}
+
+// Pyp-only recovery keywords consulted after the shared set. Kept local so the
+// 2025 pipeline (which shares scripts/chapter_keywords.json) is unaffected.
+const PYP_ONLY_KEYWORDS = {
+  chemistry: {
+    'Organic Chemistry Basics': ['enantiomer'],
+    'States of Matter': ['zinc blende', 'bragg'],
+    Hydrocarbons: ['mono substituted', 'chain terminating', 'cyclohexane'],
+    'Surface Chemistry': ['chemisorption'],
+  },
+  mathematics: {
+    Trigonometry: ['tan-1', 'triangle', 'tan a + tan b', 'cyclic quadrilateral'],
+    'Complex Numbers and Quadratic Equations': ['z - i'],
+    'Statistics and Probability': ['true/false'],
+    'Binomial Theorem': ['divisible by'],
+    'Coordinate Geometry': ['orthogonally'],
+  },
+  physics: {
+    'EMI and AC': ['a.c. source'],
+    'Work, Energy and Power': ['work done', 'potential energy'],
+    Kinematics: ['to the horizontal'],
+  },
+}
+
+/** Best-guess canonical chapter name from raw question text, or null. */
+function inferChapter(subject, text) {
+  const raw = (text ?? '').toLowerCase()
+  const cleaned = raw.replace(/[\\{}]/g, ' ')
+  for (const [chapter, kws] of KEYWORDS[subject] ?? []) {
+    for (const kw of kws) {
+      const k = kw.toLowerCase()
+      if (raw.includes(k) || cleaned.includes(k)) return chapter
+    }
+  }
+  for (const [chapter, kws] of Object.entries(PYP_ONLY_KEYWORDS[subject] ?? {})) {
+    for (const kw of kws) {
+      const k = kw.toLowerCase()
+      if (raw.includes(k) || cleaned.includes(k)) return chapter
+    }
+  }
+  return null
+}
+
+/** True when the row is a dataset instruction fragment / blank, not a real question. */
+function isJunkText(text) {
+  const t = (text ?? '').replace(/\s+/g, ' ').trim()
+  if (t.length === 0 || t.length < 15) return true
+  return /^has four choices/i.test(t) || /answer type questions/i.test(t)
+}
+
 const HF_BASE = 'https://huggingface.co/datasets/eQOURSE/jee-main-questions/resolve/main'
 const ADV_HF_BASE = 'https://huggingface.co/datasets/eQOURSE/jee-advanced-questions/resolve/main'
 
@@ -135,6 +273,7 @@ const CHAPTER_MAP = {
   },
   mathematics: {
     Sets: 'Sets, Relations and Functions',
+    sets: 'Sets, Relations and Functions',
     Relation: 'Sets, Relations and Functions',
     Functions: 'Sets, Relations and Functions',
     'Special functions': 'Sets, Relations and Functions',
@@ -245,6 +384,27 @@ function makeOptions(row) {
   return out
 }
 
+// Canonical chapter names straight from src/constants/syllabus.ts (the single
+// source of truth). Matches chapter-level entries via their trailing `order:`.
+const SYLLABUS_PATH = join(ROOT, 'src', 'constants', 'syllabus.ts')
+const CANONICAL = new Set(
+  [...(readFileSync(SYLLABUS_PATH, 'utf8').matchAll(/name:\s*'([^']+)',\s*order:\s*\d+/g))].map((m) => m[1]),
+)
+
+/** Resolve the app chapter name, walking topic map -> subtopic map -> text keywords. */
+function resolveChapter(subject, topic, subtopic, text) {
+  if (CHAPTER_MAP[subject]?.[topic]) return CHAPTER_MAP[subject][topic]
+  if (SUBTOPIC_MAP[subject]?.[subtopic]) return SUBTOPIC_MAP[subject][subtopic]
+  return inferChapter(subject, text) ?? (topic && CANONICAL.has(topic) ? topic : null)
+}
+
+function chapterSource(subject, topic, subtopic, text) {
+  if (CHAPTER_MAP[subject]?.[topic]) return 'topic'
+  if (SUBTOPIC_MAP[subject]?.[subtopic]) return 'subtopic'
+  if (inferChapter(subject, text)) return 'keyword'
+  return topic ? 'fallback' : 'none'
+}
+
 function convert(row) {
   const subject = SUBJECT_ID[row.subject]
   if (!subject) return null
@@ -254,10 +414,13 @@ function convert(row) {
   const difficulty = difficultyToLevel(row.difficulty)
   const topic = clean(row.topic)
   const subtopic = clean(row.subtopic)
-  const chapter = CHAPTER_MAP[subject]?.[topic] ?? topic
+  const questionText = stripImages(row.question).replace(/\s*\n\s*/g, ' ')
+  if (isJunkText(questionText)) return null
+  const chapter = resolveChapter(subject, topic, subtopic, questionText)
+  if (!chapter) return null
   const microTopic = subtopic || topic || chapter
   const options = makeOptions(row)
-  if (answer.type === 'single' && options.length < 2) return null
+  if (answer.type === 'single' && (options.length < 2 || answer.correctIndex >= options.length)) return null
 
   const qImages = (row.question_images ?? []).filter(Boolean).map((p) => imgUrl(row.subject.toLowerCase(), p))
   const sImages = (row.solution_images ?? []).filter(Boolean).map((p) => imgUrl(row.subject.toLowerCase(), p))
@@ -277,7 +440,7 @@ function convert(row) {
     estimatedTime: Math.round((answer.type === 'single' ? 60 : 90) + difficulty * 20),
     type,
     content: {
-      text: stripImages(row.question).replace(/\s*\n\s*/g, ' '),
+      text: questionText,
       ...(qImages[0] ? { image: qImages[0] } : {}),
     },
     options,
@@ -403,27 +566,35 @@ function main() {
   }
 
   const rows = []
+  const seenQids = new Set()
   for (const f of files) {
     for (const line of readFileSync(join(SRC_DIR, f), 'utf8').split(/\r?\n/)) {
       const t = line.trim()
       if (!t) continue
-      rows.push(JSON.parse(t))
+      const row = JSON.parse(t)
+      const qid = row.question_id
+      if (qid && seenQids.has(qid)) continue
+      if (qid) seenQids.add(qid)
+      rows.push(row)
     }
   }
 
   const out = []
-  const skipped = { single: 0, numerical: 0 }
-  let chapterMatched = 0
-  let chapterUnmatched = 0
+  let junk = 0
+  let badAnswer = 0
+  let noChapter = 0
+  const chapterStats = { topic: 0, subtopic: 0, keyword: 0, fallback: 0 }
   for (const row of rows) {
     const q = convert(row)
     if (q) {
       out.push(q)
-      const topic = clean(row.topic)
-      if (CHAPTER_MAP[q.subject]?.[topic]) chapterMatched++
-      else chapterUnmatched++
+      chapterStats[chapterSource(q.subject, clean(row.topic), clean(row.subtopic), stripImages(row.question))]++
+    } else if (isJunkText(stripImages(row.question))) {
+      junk++
+    } else if (!makeAnswer(row)) {
+      badAnswer++
     } else {
-      skipped[row.question_type] = (skipped[row.question_type] ?? 0) + 1
+      noChapter++
     }
   }
 
@@ -453,6 +624,13 @@ function main() {
       advSkipped.other++
     }
   }
+  if (!advDirOk) {
+    const advPreserved = existsSync(OUT_FILE)
+      ? JSON.parse(readFileSync(OUT_FILE, 'utf8')).filter((q) => q.exam === 'jee-advanced')
+      : []
+    out.push(...advPreserved)
+    console.log(`Advanced rows preserved from previous run: ${advPreserved.length} (${ADV_SRC_DIR} not available)`)
+  }
 
   mkdirSync(OUT_DIR, { recursive: true })
   writeFileSync(OUT_FILE, JSON.stringify(out), 'utf8')
@@ -466,10 +644,10 @@ function main() {
 
   console.log(`Rows parsed: ${rows.length}`)
   console.log(`Converted:   ${out.length}`)
-  console.log(`Skipped:     ${JSON.stringify(skipped)}`)
+  console.log(`Dropped junk text: ${junk}, bad answer: ${badAnswer}, no chapter: ${noChapter}`)
+  console.log(`Chapter via ${JSON.stringify(chapterStats)}`)
   console.log(`By subject:  ${JSON.stringify(bySubject)}`)
   console.log(`By type:     ${JSON.stringify(byType)}`)
-  console.log(`Chapter mapped: ${chapterMatched}, unmapped: ${chapterUnmatched}`)
   if (advDirOk) {
     console.log(`Advanced rows parsed: ${advRows.length}`)
     console.log(`Advanced converted:   ${advConverted}`)
