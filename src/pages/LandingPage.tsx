@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { useNavigate } from 'react-router-dom'
 import {
   motion,
+  AnimatePresence,
   useScroll,
   useTransform,
   useSpring,
@@ -319,8 +320,9 @@ function TestRunnerMockup() {
   )
 }
 
-function AnalyticsMockup() {
+function AnalyticsMockup({ animated = false }: { animated?: boolean }) {
   const bars = [42, 58, 47, 66, 61, 74, 70, 82, 79, 91]
+  const last = bars.length - 1
   return (
     <div className="relative w-full overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.55)]">
       <div className="mb-4 flex items-center justify-between">
@@ -333,18 +335,23 @@ function AnalyticsMockup() {
         </span>
       </div>
       <div className="flex h-28 items-end gap-1.5">
-        {bars.map((h, i) => (
-          <div
-            key={i}
-            className={cn(
-              'flex-1 rounded-t-md transition-all',
-              i === bars.length - 1
-                ? 'bg-gradient-to-t from-primary to-[#8ab6ff]'
-                : 'bg-surface3',
-            )}
-            style={{ height: `${h}%` }}
-          />
-        ))}
+        {bars.map((h, i) => {
+          const cls = cn(
+            'flex-1 rounded-t-md',
+            i === last ? 'bg-gradient-to-t from-primary to-[#8ab6ff]' : 'bg-surface3',
+          )
+          return animated ? (
+            <motion.div
+              key={i}
+              initial={{ height: 0 }}
+              animate={{ height: `${h}%` }}
+              transition={{ duration: 0.7, delay: i * 0.05, ease: EASE }}
+              className={cls}
+            />
+          ) : (
+            <div key={i} className={cls} style={{ height: `${h}%` }} />
+          )
+        })}
       </div>
       <div className="mt-4 grid grid-cols-3 gap-2">
         {[
@@ -407,24 +414,479 @@ function TutorChatMockup() {
   )
 }
 
+/* ------------------------------ HERO DEMO DATA ------------------------------ */
+
+const HERO_QUESTIONS: Array<{
+  subject: string
+  text: string
+  options: string[]
+  answer: number
+  hint: string
+}> = [
+  {
+    subject: 'Physics · Mechanics',
+    text: 'A 2 kg block slides from rest down a frictionless 30° incline. Its speed after moving 5 m is… (g = 10 m/s²)',
+    options: ['5 m/s', '7 m/s', '√50 m/s', '10 m/s'],
+    answer: 2,
+    hint: 'a = g·sin30° → v² = 2as',
+  },
+  {
+    subject: 'Chemistry · Equilibrium',
+    text: 'For CO(g) + H₂O(g) ⇌ CO₂(g) + H₂(g), at equilibrium [CO]=0.1 M, [H₂O]=0.2 M, [CO₂]=0.4 M, [H₂]=0.5 M. Kc = ?',
+    options: ['4', '10', '20', '100'],
+    answer: 1,
+    hint: 'Kc = [CO₂][H₂] / [CO][H₂O]',
+  },
+  {
+    subject: 'Maths · Calculus',
+    text: 'How many local maxima does f(x) = x³ − 3x² + 2 have?',
+    options: ['1', '0', '2', '3'],
+    answer: 0,
+    hint: 'f′(x) = 3x(x − 2) → sign change at x = 0',
+  },
+  {
+    subject: 'Physics · Momentum',
+    text: 'A 2 kg ball moving at 4 m/s hits a stationary 2 kg ball dead-centre elastically. The first stops. The second now moves at…',
+    options: ['2 m/s', '4 m/s', '8 m/s', '0 m/s'],
+    answer: 1,
+    hint: 'Equal masses, elastic collision → velocities swap',
+  },
+]
+
+function DemoTestView() {
+  const [qIndex, setQIndex] = useState(0)
+  const [selected, setSelected] = useState<number | null>(null)
+  const [paused, setPaused] = useState(false)
+  const q = HERO_QUESTIONS[qIndex]!
+  const answered = selected !== null
+  const correct = answered && selected === q.answer
+
+  useEffect(() => {
+    if (paused || answered) return
+    const t = window.setTimeout(
+      () => setQIndex((i) => (i + 1) % HERO_QUESTIONS.length),
+      3600,
+    )
+    return () => window.clearTimeout(t)
+  }, [paused, answered, qIndex])
+
+  const choose = (i: number) => {
+    if (answered) return
+    setSelected(i)
+    window.setTimeout(() => {
+      setSelected(null)
+      setQIndex((prev) => (prev + 1) % HERO_QUESTIONS.length)
+    }, 1500)
+  }
+
+  const palette = Array.from({ length: 15 }, (_, i) =>
+    i === qIndex ? 'current' : i < qIndex ? 'answered' : 'notvisited',
+  ) as Array<'current' | 'answered' | 'marked' | 'notvisited'>
+
+  return (
+    <div
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      className="flex"
+    >
+      <div className="min-w-0 flex-1 p-4 text-left sm:p-5">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-text3">
+            {q.subject} · Q{String(qIndex + 1).padStart(2, '0')} of {HERO_QUESTIONS.length}
+          </span>
+          <span className="rounded-md bg-danger/15 px-2 py-0.5 font-mono text-[11px] font-bold text-danger">
+            12:42
+          </span>
+        </div>
+
+        <div className="min-h-[3.5rem]">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.p
+              key={qIndex}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.28, ease: EASE }}
+              className="text-[13px] font-medium leading-relaxed text-text"
+            >
+              {q.text}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {q.options.map((opt, i) => {
+            const isAnswer = i === q.answer
+            const isPicked = i === selected
+            const state = answered
+              ? isAnswer
+                ? 'correct'
+                : isPicked
+                  ? 'wrong'
+                  : 'idle'
+              : 'idle'
+            return (
+              <button
+                key={opt}
+                onClick={() => choose(i)}
+                disabled={answered}
+                aria-pressed={isPicked}
+                className={cn(
+                  'flex items-center gap-2.5 rounded-lg border px-3 py-2 text-[12px] font-medium transition-colors',
+                  state === 'correct' && 'border-success bg-success/10 text-success',
+                  state === 'wrong' && 'border-danger bg-danger/10 text-danger',
+                  state === 'idle' &&
+                    'cursor-pointer border-border bg-surface2 text-text2 hover:border-primary/40 hover:text-text',
+                )}
+              >
+                <span
+                  className={cn(
+                    'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[10px] font-bold',
+                    state === 'correct' && 'border-success bg-success text-white',
+                    state === 'wrong' && 'border-danger bg-danger text-white',
+                    state === 'idle' && 'border-border2 text-text3',
+                  )}
+                >
+                  {String.fromCharCode(65 + i)}
+                </span>
+                {opt}
+                {state === 'correct' ? <Icon name="check" size={13} className="ml-auto" /> : null}
+                {state === 'wrong' ? <Icon name="x" size={13} className="ml-auto" /> : null}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="mt-4 flex items-center justify-between text-[11px] text-text3">
+          <span
+            className={cn(
+              'transition-colors',
+              answered && (correct ? 'text-success' : 'text-danger'),
+            )}
+          >
+            {answered ? (correct ? 'Correct — ' : 'Not quite — ') : 'K · M · S shortcuts · '}
+            {answered ? q.hint : 'Marked 2 · Answered 43'}
+          </span>
+        </div>
+      </div>
+
+      <div className="hidden w-36 shrink-0 border-l border-border bg-surface2/50 p-3 sm:block">
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-text3">Palette</p>
+        <div className="grid grid-cols-5 gap-1">
+          {palette.map((c, i) => (
+            <span
+              key={i}
+              className="flex h-5 items-center justify-center rounded text-[9px] font-semibold text-white"
+              style={{ backgroundColor: CELL_COLOR[c] }}
+            >
+              {i + 1}
+            </span>
+          ))}
+        </div>
+        <div className="mt-3 space-y-1.5 text-[10px] text-text2">
+          <div className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-sm bg-[var(--palette-answered)]" /> Answered
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-sm bg-[var(--palette-marked)]" /> Marked
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-sm bg-[var(--palette-current)]" /> Current
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const HERO_CARDS = [
+  { front: 'τ = I α', back: 'Torque = Moment of inertia × Angular acceleration' },
+  { front: 'E = h f', back: 'Photon energy = Planck constant × Frequency' },
+  { front: 'F = m a', back: 'Force = Mass × Acceleration' },
+]
+
+function DemoFlashcardView() {
+  const [idx, setIdx] = useState(0)
+  const [flipped, setFlipped] = useState(false)
+  const card = HERO_CARDS[idx]!
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      if (!flipped) setFlipped(true)
+      else {
+        setFlipped(false)
+        setIdx((i) => (i + 1) % HERO_CARDS.length)
+      }
+    }, flipped ? 2600 : 2200)
+    return () => window.clearTimeout(t)
+  }, [flipped, idx])
+
+  return (
+    <div className="flex flex-col items-center justify-center p-5" style={{ perspective: '1000px' }}>
+      <button
+        onClick={() => setFlipped((f) => !f)}
+        aria-label="Flashcard preview — flip"
+        className="w-full max-w-sm focus-ring"
+      >
+        <motion.div
+          animate={{ rotateY: flipped ? 180 : 0 }}
+          transition={{ duration: 0.5, ease: EASE }}
+          style={{ transformStyle: 'preserve-3d' }}
+          className="relative h-44 w-full rounded-2xl border border-border bg-surface text-center shadow-[0_30px_90px_-20px_rgba(0,0,0,0.55)]"
+        >
+          <div
+            style={{ backfaceVisibility: 'hidden' }}
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl p-5"
+          >
+            <span className="text-[10px] font-bold uppercase tracking-wider text-text3">
+              Physics · Rotational Motion
+            </span>
+            <span className="font-serif text-3xl font-semibold tracking-tight text-text">
+              {card.front}
+            </span>
+            <span className="text-[11px] text-text3">Tap to reveal</span>
+          </div>
+          <div
+            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-primary/10 to-primary2/10 p-5"
+          >
+            <span className="text-[12px] leading-relaxed text-text">{card.back}</span>
+          </div>
+        </motion.div>
+      </button>
+      <div className="mt-4 flex items-center gap-1.5">
+        {HERO_CARDS.map((_, i) => (
+          <span
+            key={i}
+            className={cn(
+              'h-1.5 rounded-full transition-all duration-300',
+              i === idx ? 'w-5 bg-primary' : 'w-1.5 bg-surface3',
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function DemoAnalyticsView() {
+  return (
+    <div className="p-4 sm:p-5">
+      <AnalyticsMockup animated />
+    </div>
+  )
+}
+
+const HERO_TABS = [
+  { id: 'test', label: 'Test', icon: 'test' as IconName },
+  { id: 'analytics', label: 'Analytics', icon: 'line-chart' as IconName },
+  { id: 'flashcards', label: 'Flashcards', icon: 'flashcard' as IconName },
+]
+type HeroTab = (typeof HERO_TABS)[number]['id']
+const HERO_TAB_IDS = HERO_TABS.map((t) => t.id) as HeroTab[]
+
+function HeroMockup() {
+  const [tab, setTab] = useState<HeroTab>('test')
+  const [interacted, setInteracted] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { margin: '-10% 0px -10% 0px' })
+
+  const autoRotate = inView && !hovered && !interacted
+
+  useEffect(() => {
+    if (!autoRotate) return
+    const next = HERO_TAB_IDS[(HERO_TAB_IDS.indexOf(tab) + 1) % HERO_TAB_IDS.length]!
+    const t = window.setTimeout(() => setTab(next), 6500)
+    return () => window.clearTimeout(t)
+  }, [autoRotate, tab])
+
+  return (
+    <div
+      ref={ref}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="relative w-[min(840px,94vw)] overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_40px_120px_-20px_rgba(0,0,0,0.6)]"
+    >
+      <div className="flex items-center gap-2 border-b border-border bg-surface2 px-4 py-2.5">
+        <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+        <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+        <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+        <div className="mx-auto flex items-center gap-1.5 rounded-md bg-surface3 px-3 py-1 text-[11px] text-text3">
+          <Icon name="shield" size={11} />
+          jeearena.app
+        </div>
+        <span className="flex items-center gap-1.5 text-[10px] font-semibold text-success">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
+          Live demo
+        </span>
+      </div>
+
+      <div className="flex items-end gap-1 border-b border-border bg-surface2/60 px-3">
+        {HERO_TAB_IDS.map((t) => {
+          const meta = HERO_TABS.find((x) => x.id === t)!
+          const active = tab === t
+          return (
+            <button
+              key={t}
+              onClick={() => {
+                setTab(t)
+                setInteracted(true)
+              }}
+              aria-pressed={active}
+              className={cn(
+                'flex items-center gap-1.5 border-b-2 px-3.5 pb-2 pt-2.5 text-[11px] font-semibold transition-colors',
+                active
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text3 hover:text-text2',
+              )}
+            >
+              <Icon name={meta.icon} size={13} />
+              {meta.label}
+            </button>
+          )
+        })}
+      </div>
+
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={tab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3, ease: EASE }}
+          className="min-h-[290px]"
+        >
+          {tab === 'test' ? (
+            <DemoTestView />
+          ) : tab === 'analytics' ? (
+            <DemoAnalyticsView />
+          ) : (
+            <DemoFlashcardView />
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
+}
+
+/* --------------------------------- HERO COPY -------------------------------- */
+
+function HeroCopy() {
+  const navigate = useNavigate()
+  return (
+    <div className="mx-auto max-w-4xl text-center">
+      <Reveal y={16}>
+        <Eyebrow>Built for JEE Main & Advanced</Eyebrow>
+      </Reveal>
+      <motion.h1
+        initial={{ opacity: 0, y: 34 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.9, delay: 0.1, ease: EASE }}
+        className="mt-6 text-5xl font-bold leading-[1.04] tracking-tighter text-text sm:text-7xl md:text-[80px]"
+      >
+        The closest thing
+        <br />
+        to the{' '}
+        <span className="bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24] bg-clip-text text-transparent">
+          real JEE.
+        </span>
+      </motion.h1>
+      <motion.p
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.9, delay: 0.22, ease: EASE }}
+        className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-text2 sm:text-lg"
+      >
+        Every real PYQ since 2014. The exact NTA interface. An adaptive engine that learns your
+        weak points. Analytics that tell you what to fix. All of it — free, offline, forever.
+      </motion.p>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.9, delay: 0.34, ease: EASE }}
+        className="mt-8 flex flex-wrap items-center justify-center gap-3"
+      >
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="focus-ring rounded-full bg-primary px-7 py-3.5 text-[15px] font-semibold text-white shadow-xl shadow-primary/30 transition-all duration-200 hover:bg-primary2 hover:shadow-primary/45 active:scale-[0.97]"
+        >
+          Start Practicing — Free
+        </button>
+        <a
+          href="#modes"
+          className="focus-ring inline-flex items-center gap-2 rounded-full border border-border2 px-7 py-3.5 text-[15px] font-semibold text-text transition-all duration-200 hover:border-primary/40 hover:bg-surface2"
+        >
+          See how it works
+          <Icon name="arrow-right" size={16} />
+        </a>
+      </motion.div>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 0.5 }}
+        className="mt-5 text-xs font-medium uppercase tracking-wider text-text3"
+      >
+        No account · No install · No fees
+      </motion.p>
+    </div>
+  )
+}
+
+function HeroStatic() {
+  return (
+    <section className="relative overflow-hidden px-5 pb-28 pt-32 sm:pb-36">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-60"
+        style={{
+          backgroundImage:
+            'radial-gradient(ellipse 70% 45% at 50% -5%, var(--primary) 0%, transparent 55%), radial-gradient(ellipse 50% 35% at 85% 20%, var(--accent) 0%, transparent 55%), radial-gradient(ellipse 55% 40% at 12% 25%, var(--info) 0%, transparent 55%)',
+          filter: 'blur(90px)',
+        }}
+      />
+      <div className="relative mx-auto max-w-6xl">
+        <HeroCopy />
+        <div className="mt-16 flex justify-center">
+          <HeroMockup />
+        </div>
+      </div>
+    </section>
+  )
+}
+
 /* ---------------------------------- HERO --------------------------------- */
 
 function Hero() {
   const ref = useRef<HTMLElement>(null)
-  const navigate = useNavigate()
+  const glowRef = useRef<HTMLDivElement>(null)
   const reduce = useReducedMotion()
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
   const smooth = useSpring(scrollYProgress, { stiffness: 110, damping: 28 })
 
-  const textY = useTransform(smooth, [0, 0.38], [0, reduce ? 0 : -100])
-  const textOpacity = useTransform(smooth, [0, 0.32], [1, 0])
-  const mockupScale = useTransform(smooth, [0, 1], [1, reduce ? 1 : 2.4])
-  const mockupY = useTransform(smooth, [0, 1], [0, reduce ? 0 : -140])
-  const mockupOpacity = useTransform(smooth, [0, 0.55], [1, 0])
+  const textY = useTransform(smooth, [0, 0.22], [0, -110])
+  const textOpacity = useTransform(smooth, [0, 0.16], [1, 0])
+  const hintOpacity = useTransform(smooth, [0, 0.05], [1, 0])
+  const mockY = useTransform(smooth, [0, 0.5, 0.85, 1], [220, 0, -70, -130])
+  const mockScale = useTransform(smooth, [0, 0.55, 1], [0.85, 1, 1.5])
+  const mockOpacity = useTransform(smooth, [0.04, 0.16, 0.75, 0.92], [0, 1, 1, 0])
+
+  const onMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    const el = glowRef.current
+    const r = ref.current?.getBoundingClientRect()
+    if (!el || !r) return
+    el.style.background = `radial-gradient(560px circle at ${e.clientX - r.left}px ${e.clientY - r.top}px, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 65%)`
+  }
+
+  if (reduce) return <HeroStatic />
 
   return (
-    <section ref={ref} className="relative h-[330vh]">
+    <section ref={ref} onMouseMove={onMouseMove} className="relative h-[300vh]">
       <div className="sticky top-0 flex h-screen flex-col items-center justify-center overflow-hidden px-5 pt-16">
+        <motion.div
+          style={{ scaleX: smooth }}
+          className="absolute inset-x-0 top-0 z-40 h-[2px] origin-left bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24]"
+        />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-60"
@@ -434,6 +896,7 @@ function Hero() {
             filter: 'blur(90px)',
           }}
         />
+        <div aria-hidden ref={glowRef} className="pointer-events-none absolute inset-0 opacity-70" />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-[0.5]"
@@ -444,74 +907,28 @@ function Hero() {
           }}
         />
 
-        <motion.div
-          style={{ y: textY, opacity: textOpacity }}
-          className="relative z-10 mx-auto max-w-4xl text-center"
-        >
-          <Reveal y={16}>
-            <Eyebrow>Built for JEE Main & Advanced</Eyebrow>
-          </Reveal>
-          <motion.h1
-            initial={{ opacity: 0, y: 34 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.1, ease: EASE }}
-            className="mt-6 text-5xl font-bold leading-[1.04] tracking-tighter text-text sm:text-7xl md:text-[84px]"
-          >
-            The closest thing
-            <br />
-            to the{' '}
-            <span className="bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24] bg-clip-text text-transparent">
-              real JEE.
-            </span>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.22, ease: EASE }}
-            className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-text2 sm:text-lg"
-          >
-            Every real PYQ since 2014. The exact NTA interface. An adaptive engine that learns your
-            weak points. Analytics that tell you what to fix. All of it — free, offline, forever.
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.34, ease: EASE }}
-            className="mt-8 flex flex-wrap items-center justify-center gap-3"
-          >
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="focus-ring rounded-full bg-primary px-7 py-3.5 text-[15px] font-semibold text-white shadow-xl shadow-primary/30 transition-all duration-200 hover:bg-primary2 hover:shadow-primary/45 active:scale-[0.97]"
-            >
-              Start Practicing — Free
-            </button>
-            <a
-              href="#modes"
-              className="focus-ring inline-flex items-center gap-2 rounded-full border border-border2 px-7 py-3.5 text-[15px] font-semibold text-text transition-all duration-200 hover:border-primary/40 hover:bg-surface2"
-            >
-              See how it works
-              <Icon name="arrow-right" size={16} />
-            </a>
-          </motion.div>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 0.5 }}
-            className="mt-5 text-xs font-medium uppercase tracking-wider text-text3"
-          >
-            No account · No install · No fees
-          </motion.p>
+        <motion.div style={{ y: textY, opacity: textOpacity }} className="relative z-10">
+          <HeroCopy />
         </motion.div>
 
         <motion.div
-          style={{ scale: mockupScale, y: mockupY, opacity: mockupOpacity }}
-          className="absolute inset-x-0 bottom-[-6vh] z-0 flex justify-center origin-bottom"
+          style={{ y: mockY, scale: mockScale, opacity: mockOpacity }}
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-0 flex origin-bottom justify-center pb-6"
         >
-          <div className="flex flex-col items-center gap-6">
-            <TestRunnerMockup />
-            <div className="relative z-10 -mt-2 animate-bounce rounded-full border border-border bg-surface/70 px-3.5 py-2 text-[11px] font-semibold text-text2 backdrop-blur">
-              Scroll to explore
-            </div>
+          <div className="pointer-events-auto w-full max-w-[840px]">
+            <TiltCard intensity={3}>
+              <HeroMockup />
+            </TiltCard>
+          </div>
+        </motion.div>
+
+        <motion.div
+          style={{ opacity: hintOpacity }}
+          className="absolute bottom-6 left-1/2 z-10 hidden -translate-x-1/2 sm:block"
+        >
+          <div className="flex items-center gap-2 rounded-full border border-border bg-surface/70 px-4 py-2 text-[11px] font-semibold text-text2 backdrop-blur">
+            <Icon name="chevron-down" size={13} className="animate-bounce text-primary" />
+            Scroll to explore
           </div>
         </motion.div>
       </div>
