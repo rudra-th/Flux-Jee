@@ -118,6 +118,126 @@ function CountUp({
   )
 }
 
+function MagneticButton({
+  children,
+  className,
+  onClick,
+  strength = 0.22,
+  type = 'button',
+}: {
+  children: ReactNode
+  className?: string
+  onClick?: () => void
+  strength?: number
+  type?: 'button' | 'submit'
+}) {
+  const ref = useRef<HTMLButtonElement>(null)
+  const reduce = useReducedMotion()
+  const [style, setStyle] = useState<CSSProperties>({})
+
+  const onMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (reduce) return
+    const r = ref.current?.getBoundingClientRect()
+    if (!r) return
+    const dx = e.clientX - (r.left + r.width / 2)
+    const dy = e.clientY - (r.top + r.height / 2)
+    setStyle({ transform: `translate(${dx * strength}px, ${dy * strength}px)` })
+  }
+  const onLeave = () => setStyle({})
+
+  return (
+    <button
+      ref={ref}
+      type={type}
+      onClick={onClick}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      style={{
+        transition: 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
+        willChange: 'transform',
+        ...style,
+      }}
+      className={className}
+    >
+      {children}
+    </button>
+  )
+}
+
+const HERO_WORDS = ['real JEE.', 'exact NTA screen.', 'real exam day.']
+
+function RotatingWords() {
+  const reduce = useReducedMotion()
+  const [i, setI] = useState(0)
+
+  useEffect(() => {
+    if (reduce) return
+    const t = window.setInterval(() => setI((x) => (x + 1) % HERO_WORDS.length), 2600)
+    return () => window.clearInterval(t)
+  }, [reduce])
+
+  const word = HERO_WORDS[i]!
+  return (
+    <span className="inline-block whitespace-nowrap text-left">
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={word}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -14 }}
+          transition={{ duration: 0.35, ease: EASE }}
+          className="inline-block bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24] bg-clip-text text-transparent"
+        >
+          {word}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  )
+}
+
+function FloatingBadge({
+  children,
+  className,
+  delay = 0,
+}: {
+  children: ReactNode
+  className?: string
+  delay?: number
+}) {
+  const reduce = useReducedMotion()
+  return (
+    <motion.div
+      animate={reduce ? undefined : { y: [0, -9, 0] }}
+      transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay }}
+      className={cn('pointer-events-none absolute z-10 hidden lg:block', className)}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+function StatChip({
+  icon,
+  label,
+  value,
+}: {
+  icon: IconName
+  label: string
+  value: ReactNode
+}) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-full border border-border bg-surface/70 px-4 py-2 backdrop-blur">
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/12 text-primary">
+        <Icon name={icon} size={13} />
+      </span>
+      <span className="text-[12px] font-semibold text-text">
+        {value}
+        <span className="ml-1 font-medium text-text3">{label}</span>
+      </span>
+    </div>
+  )
+}
+
 function Eyebrow({ children }: { children: ReactNode }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">
@@ -163,6 +283,7 @@ function Nav() {
   }, [])
 
   const links = [
+    { label: 'How it works', href: '#how' },
     { label: 'Modes', href: '#modes' },
     { label: 'Features', href: '#features' },
     { label: 'Why us', href: '#compare' },
@@ -787,10 +908,7 @@ function HeroCopy() {
       >
         The closest thing
         <br />
-        to the{' '}
-        <span className="bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24] bg-clip-text text-transparent">
-          real JEE.
-        </span>
+        to the <RotatingWords />
       </motion.h1>
       <motion.p
         initial={{ opacity: 0, y: 24 }}
@@ -802,19 +920,29 @@ function HeroCopy() {
         weak points. Analytics that tell you what to fix. All of it — free, offline, forever.
       </motion.p>
       <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.9, delay: 0.3, ease: EASE }}
+        className="mt-7 flex flex-wrap items-center justify-center gap-2.5"
+      >
+        <StatChip icon="file" label="real PYQs" value={<CountUp to={14600} suffix="+" />} />
+        <StatChip icon="book" label="chapters covered" value={<CountUp to={64} />} />
+        <StatChip icon="battery" label="offline" value={<CountUp to={100} suffix="%" />} />
+      </motion.div>
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.9, delay: 0.34, ease: EASE }}
+        transition={{ duration: 0.9, delay: 0.4, ease: EASE }}
         className="mt-8 flex flex-wrap items-center justify-center gap-3"
       >
-        <button
+        <MagneticButton
           onClick={() => navigate('/dashboard')}
-          className="focus-ring rounded-full bg-primary px-7 py-3.5 text-[15px] font-semibold text-white shadow-xl shadow-primary/30 transition-all duration-200 hover:bg-primary2 hover:shadow-primary/45 active:scale-[0.97]"
+          className="focus-ring rounded-full bg-primary px-7 py-3.5 text-[15px] font-semibold text-white shadow-xl shadow-primary/30 transition-colors duration-200 hover:bg-primary2 hover:shadow-primary/45"
         >
           Start Practicing — Free
-        </button>
+        </MagneticButton>
         <a
-          href="#modes"
+          href="#how"
           className="focus-ring inline-flex items-center gap-2 rounded-full border border-border2 px-7 py-3.5 text-[15px] font-semibold text-text transition-all duration-200 hover:border-primary/40 hover:bg-surface2"
         >
           See how it works
@@ -915,10 +1043,45 @@ function Hero() {
           style={{ y: mockY, scale: mockScale, opacity: mockOpacity }}
           className="pointer-events-none absolute inset-x-0 bottom-0 z-0 flex origin-bottom justify-center pb-6"
         >
-          <div className="pointer-events-auto w-full max-w-[840px]">
-            <TiltCard intensity={3}>
-              <HeroMockup />
-            </TiltCard>
+          <div className="relative w-full max-w-[920px]">
+            <div className="pointer-events-auto mx-auto w-full max-w-[840px]">
+              <TiltCard intensity={3}>
+                <HeroMockup />
+              </TiltCard>
+            </div>
+            <FloatingBadge className="left-0 top-[18%]" delay={0.3}>
+              <div className="flex items-center gap-2.5 rounded-xl border border-border bg-surface/85 px-3.5 py-2.5 shadow-2xl backdrop-blur-md">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-success/15 text-success">
+                  <Icon name="trending-up" size={14} />
+                </span>
+                <div>
+                  <p className="text-[11px] font-bold text-text">Accuracy 86.4%</p>
+                  <p className="text-[10px] text-text3">+11.2% this week</p>
+                </div>
+              </div>
+            </FloatingBadge>
+            <FloatingBadge className="right-0 top-[8%]" delay={0.9}>
+              <div className="flex items-center gap-2.5 rounded-xl border border-border bg-surface/85 px-3.5 py-2.5 shadow-2xl backdrop-blur-md">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-warning/15 text-warning">
+                  <Icon name="flame" size={14} />
+                </span>
+                <div>
+                  <p className="text-[11px] font-bold text-text">12-day streak</p>
+                  <p className="text-[10px] text-text3">Practice daily</p>
+                </div>
+              </div>
+            </FloatingBadge>
+            <FloatingBadge className="right-[7%] bottom-[10%]" delay={1.5}>
+              <div className="flex items-center gap-2.5 rounded-xl border border-border bg-surface/85 px-3.5 py-2.5 shadow-2xl backdrop-blur-md">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <Icon name="brain" size={14} />
+                </span>
+                <div>
+                  <p className="text-[11px] font-bold text-text">AI Tutor</p>
+                  <p className="text-[10px] text-success">● online, on your mistakes</p>
+                </div>
+              </div>
+            </FloatingBadge>
           </div>
         </motion.div>
 
@@ -962,6 +1125,86 @@ function Marquee() {
         ))}
       </div>
     </div>
+  )
+}
+
+/* ------------------------------- HOW IT WORKS ----------------------------- */
+
+const HOW_STEPS: Array<{
+  n: string
+  icon: IconName
+  title: string
+  desc: string
+  accent: string
+}> = [
+  {
+    n: '01',
+    icon: 'grid',
+    title: 'Pick your mode',
+    desc: 'Full NTA replica, chapter drills, daily sprints — or let the engine build your test from the chapters you keep getting wrong.',
+    accent: '#60a5fa',
+  },
+  {
+    n: '02',
+    icon: 'keyboard',
+    title: 'Solve like exam day',
+    desc: 'The exact NTA screen: palette, timer, marking scheme and keyboard shortcuts. When the real paper opens, nothing feels new.',
+    accent: '#a78bfa',
+  },
+  {
+    n: '03',
+    icon: 'line-chart',
+    title: 'Get your battle plan',
+    desc: 'Every answer is scored in real time. Analytics find your weak points, and flashcards plus the AI tutor turn them into tomorrow\'s plan.',
+    accent: '#fbbf24',
+  },
+]
+
+function HowItWorks() {
+  return (
+    <section id="how" className="relative mx-auto max-w-6xl scroll-mt-24 px-5 py-24 sm:py-32">
+      <SectionHeading
+        eyebrow="Three steps"
+        title={
+          <>
+            From question to rank —
+            <br />
+            <span className="bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24] bg-clip-text text-transparent">
+              in three moves.
+            </span>
+          </>
+        }
+        sub="No setup, no account, no studying the app instead of studying. Open it and start."
+      />
+
+      <div className="relative mt-14 grid gap-5 md:grid-cols-3">
+        <div
+          aria-hidden
+          className="absolute left-[16%] right-[16%] top-10 hidden h-px bg-gradient-to-r from-primary/0 via-primary/40 to-primary/0 md:block"
+        />
+        {HOW_STEPS.map((step, i) => (
+          <Reveal key={step.n} delay={i * 0.12}>
+            <TiltCard className="h-full" intensity={5}>
+              <div className="group relative flex h-full flex-col gap-4 rounded-2xl border border-border bg-surface p-6 transition-colors duration-200 hover:border-primary/35">
+                <span className="absolute right-5 top-4 font-mono text-[42px] font-bold leading-none text-surface3 transition-colors duration-200 group-hover:text-primary/25">
+                  {step.n}
+                </span>
+                <div
+                  className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"
+                  style={{ backgroundColor: `${step.accent}1f`, color: step.accent }}
+                >
+                  <Icon name={step.icon} size={23} />
+                </div>
+                <div className="relative z-10">
+                  <h3 className="text-[17px] font-bold text-text">{step.title}</h3>
+                  <p className="mt-2 text-[13px] leading-relaxed text-text2">{step.desc}</p>
+                </div>
+              </div>
+            </TiltCard>
+          </Reveal>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -1017,6 +1260,139 @@ function ModesGrid() {
             </TiltCard>
           </Reveal>
         ))}
+      </div>
+    </section>
+  )
+}
+
+/* ---------------------------- SUBJECT COVERAGE ---------------------------- */
+
+const SUBJECTS: Array<{
+  name: string
+  count: number
+  chapters: number
+  pct: number
+  color: string
+  topics: string[]
+}> = [
+  {
+    name: 'Physics',
+    count: 5200,
+    chapters: 22,
+    pct: 92,
+    color: '#60a5fa',
+    topics: ['Mechanics', 'Thermo', 'Optics', 'Modern'],
+  },
+  {
+    name: 'Chemistry',
+    count: 4800,
+    chapters: 20,
+    pct: 88,
+    color: '#a78bfa',
+    topics: ['Physical', 'Organic', 'Inorganic'],
+  },
+  {
+    name: 'Mathematics',
+    count: 4600,
+    chapters: 22,
+    pct: 95,
+    color: '#fbbf24',
+    topics: ['Algebra', 'Calculus', 'Vectors', 'Coordinate'],
+  },
+]
+
+function SubjectBar({ s, index }: { s: (typeof SUBJECTS)[number]; index: number }) {
+  const reduce = useReducedMotion()
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5 transition-colors duration-200 hover:border-primary/30">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: s.color }}
+          />
+          <p className="text-[15px] font-bold text-text">{s.name}</p>
+        </div>
+        <p className="text-[13px] font-semibold text-text2">
+          <span className="text-text">
+            <CountUp to={s.count} />
+          </span>{' '}
+          questions
+        </p>
+      </div>
+      <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-surface3">
+        <motion.div
+          initial={reduce ? false : { width: 0 }}
+          whileInView={{ width: `${s.pct}%` }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 1.1, ease: EASE, delay: index * 0.12 }}
+          className="h-full rounded-full"
+          style={{ background: `linear-gradient(90deg, ${s.color}, #8ab6ff)` }}
+        />
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {s.topics.map((t) => (
+            <span
+              key={t}
+              className="rounded-md border border-border bg-surface2 px-2 py-0.5 text-[10px] font-semibold text-text3"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+        <span className="text-[11px] font-medium text-text3">
+          {s.chapters} chapters · {s.pct}% of syllabus
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function SubjectsCoverage() {
+  return (
+    <section className="border-y border-border bg-surface/30 px-5 py-24 sm:py-32">
+      <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
+        <div>
+          <SectionHeading
+            center={false}
+            eyebrow="Full syllabus"
+            title={
+              <>
+                Every chapter.
+                <br />
+                <span className="bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24] bg-clip-text text-transparent">
+                  Every micro-topic.
+                </span>
+              </>
+            }
+            sub="64 chapters and 186 micro-topics across Physics, Chemistry and Mathematics — every NTA topic with real questions, not approximations."
+          />
+          <Reveal delay={0.15}>
+            <div className="mt-8 flex flex-wrap gap-3">
+              {[
+                { icon: 'check-circle' as IconName, label: 'Organised by NTA syllabus' },
+                { icon: 'refresh' as IconName, label: 'Updated with every shift' },
+                { icon: 'calculator' as IconName, label: 'Every answer solved' },
+              ].map((b) => (
+                <div
+                  key={b.label}
+                  className="flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-[12px] font-semibold text-text2"
+                >
+                  <Icon name={b.icon} size={14} className="text-success" />
+                  {b.label}
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+        <div className="space-y-4">
+          {SUBJECTS.map((s, i) => (
+            <Reveal key={s.name} delay={i * 0.1}>
+              <SubjectBar s={s} index={i} />
+            </Reveal>
+          ))}
+        </div>
       </div>
     </section>
   )
@@ -1252,6 +1628,167 @@ function RevisionFeature() {
             </motion.div>
           </Reveal>
         </div>
+      </div>
+    </section>
+  )
+}
+
+/* ------------------------------ AI TUTOR FEATURE --------------------------- */
+
+const TUTOR_ROUNDS: Array<Array<{ from: 'user' | 'ai'; text: string }>> = [
+  [
+    {
+      from: 'user',
+      text: 'Why did I lose a mark on Q23? I used Kc = [P] / [R].',
+    },
+    {
+      from: 'ai',
+      text: 'Because H₂O is a liquid — it never enters Kc. Kc = [CO₂][H₂] / [CO] = (0.4 × 0.5) / (0.1 × 0.2) = 10. You forgot to omit pure liquids and solids.',
+    },
+  ],
+  [
+    { from: 'user', text: 'What should I revise tonight?' },
+    {
+      from: 'ai',
+      text: 'From today\'s test: Equilibrium 38%, Electrochemistry 44% — plus 2 questions marked for review in Maths. I built you a 20-question focused set.',
+    },
+  ],
+  [
+    { from: 'user', text: 'Why do I keep losing marks in the last 10 questions?' },
+    {
+      from: 'ai',
+      text: '62% of your errors are sign mistakes (Mistake Notebook), and you slow down after Q60 — avg 142s vs 90s target. I added a 12-question speed drill for tomorrow.',
+    },
+  ],
+]
+
+function AnimatedTutorMockup() {
+  const reduce = useReducedMotion()
+  const [round, setRound] = useState(0)
+  const [typing, setTyping] = useState(true)
+  const messages = TUTOR_ROUNDS[round]!
+
+  useEffect(() => {
+    if (reduce) return
+    setTyping(true)
+    const t1 = window.setTimeout(() => setTyping(false), 900)
+    const t2 = window.setTimeout(() => setRound((r) => (r + 1) % TUTOR_ROUNDS.length), 6800)
+    return () => {
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+    }
+  }, [round, reduce])
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_30px_90px_-20px_rgba(0,0,0,0.55)]">
+      <div className="flex items-center gap-2.5 border-b border-border bg-surface2/70 px-4 py-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary2">
+          <Icon name="brain" size={16} className="text-white" />
+        </div>
+        <div>
+          <p className="text-[12px] font-bold text-text">AI Tutor</p>
+          <p className="flex items-center gap-1 text-[10px] text-success">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" /> online · trained
+            on your attempts
+          </p>
+        </div>
+        <span className="ml-auto flex items-center gap-1.5 text-[10px] font-semibold text-text3">
+          <Icon name="sparkles" size={12} /> Mistake-aware
+        </span>
+      </div>
+
+      <div className="flex min-h-[210px] flex-col gap-2.5 p-4">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={round}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3, ease: EASE }}
+            className="flex flex-col gap-2.5"
+          >
+            {messages.map((m, i) =>
+              m.from === 'user' ? (
+                <div
+                  key={i}
+                  className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm border border-border bg-surface2 px-3.5 py-2.5 text-[12px] leading-relaxed text-text"
+                >
+                  {m.text}
+                </div>
+              ) : (
+                <div
+                  key={i}
+                  className="max-w-[92%] rounded-2xl rounded-tl-sm bg-primary/12 px-3.5 py-2.5 text-[12px] leading-relaxed text-text"
+                >
+                  {m.text}
+                </div>
+              ),
+            )}
+          </motion.div>
+        </AnimatePresence>
+        {typing ? (
+          <div className="flex items-center gap-1 w-fit rounded-2xl rounded-tl-sm border border-border bg-surface2 px-3.5 py-2.5">
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-text3 [animation-delay:0ms]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-text3 [animation-delay:120ms]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-text3 [animation-delay:240ms]" />
+          </div>
+        ) : null}
+      </div>
+
+      <div className="flex items-center gap-2 border-t border-border bg-surface2/50 px-4 py-3">
+        <div className="flex-1 rounded-full border border-border bg-surface px-4 py-2 text-[12px] text-text3">
+          Ask a doubt from your last test…
+        </div>
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30">
+          <Icon name="arrow-up-right" size={15} />
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function AiTutorFeature() {
+  return (
+    <section id="ai" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-24 sm:py-32">
+      <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <div>
+          <SectionHeading
+            center={false}
+            eyebrow="AI Tutor"
+            title={
+              <>
+                Stuck on a question?
+                <br />
+                <span className="bg-gradient-to-r from-[#f5a524] via-[#fbbf24] to-[#60a5fa] bg-clip-text text-transparent">
+                  Ask your mistake.
+                </span>
+              </>
+            }
+            sub="The AI tutor reads your actual attempt — the option you picked, the time you took, the formula you used — and explains exactly the step that cost you the mark."
+          />
+          <Reveal delay={0.15}>
+            <div className="mt-8 space-y-3">
+              {[
+                'Explains the mistake you actually made — not the whole solution',
+                'Runs offline: your doubts never leave your device',
+                'Instantly converts weak points into a revision set',
+                'Solves a related question to confirm you got it',
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
+                    <Icon name="check" size={12} />
+                  </span>
+                  <span className="text-sm font-medium text-text">{item}</span>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+        <Reveal delay={0.1}>
+          <TiltCard intensity={4}>
+            <AnimatedTutorMockup />
+          </TiltCard>
+        </Reveal>
       </div>
     </section>
   )
@@ -1643,15 +2180,26 @@ function Footer() {
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-bg text-text">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-[70] opacity-[0.04] mix-blend-overlay"
+        style={{
+          backgroundImage:
+            'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'160\' height=\'160\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'2\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
+        }}
+      />
       <Nav />
       <main>
         <Hero />
         <Marquee />
+        <HowItWorks />
         <ModesGrid />
+        <SubjectsCoverage />
         <FullTestFeature />
         <FeaturesGrid />
         <AnalyticsFeature />
         <RevisionFeature />
+        <AiTutorFeature />
         <Compare />
         <BigNumbers />
         <Testimonials />
