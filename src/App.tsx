@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppShell } from '@/components/layout/AppShell'
 import { DataBootstrap } from '@/components/layout/DataBootstrap'
 import { useSettingsStore, applyTheme } from '@/stores/settingsStore'
+import LandingPage from '@/pages/LandingPage'
 import HomePage from '@/pages/HomePage'
 import TestBuilder from '@/pages/TestBuilder'
 import PracticePage from '@/pages/PracticePage'
@@ -46,7 +47,8 @@ export default function App() {
       <DataBootstrap>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<AppShell><HomePage /></AppShell>} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/dashboard" element={<AppShell><HomePage /></AppShell>} />
             <Route path="/test" element={<AppShell><TestBuilder /></AppShell>} />
             <Route path="/test/:mode" element={<AppShell><TestBuilder /></AppShell>} />
             <Route path="/practice" element={<AppShell><PracticePage /></AppShell>} />

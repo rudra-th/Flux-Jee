@@ -31,6 +31,7 @@
   --animate-scale-in: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-slide-up: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-marquee: marquee 32s linear infinite;
 
   @keyframes fade-in {
     from { opacity: 0; }
@@ -47,6 +48,10 @@
   @keyframes shimmer {
     0% { background-position: -400px 0; }
     100% { background-position: 400px 0; }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
   }
 }
 
@@ -163,6 +168,7 @@ html {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
 }
 
 body {
