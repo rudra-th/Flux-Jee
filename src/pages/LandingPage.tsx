@@ -172,7 +172,7 @@ function MagneticButton({
   )
 }
 
-const HERO_WORDS = ['real JEE.', 'exact NTA screen.', 'real exam day.']
+const HERO_WORDS = ['real JEE.', 'NTA screen.', 'real exam.']
 
 function RotatingWords() {
   const reduce = useReducedMotion()
@@ -185,16 +185,21 @@ function RotatingWords() {
   }, [reduce])
 
   const word = HERO_WORDS[i]!
+  const widest = HERO_WORDS.reduce((a, b) => (b.length > a.length ? b : a))
+
   return (
-    <span className="inline-block whitespace-nowrap text-left">
+    <span aria-live="polite" className="relative inline-block whitespace-nowrap text-left">
+      <span className="invisible" aria-hidden>
+        {widest}
+      </span>
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
           key={word}
-          initial={{ opacity: 0, y: 14 }}
+          initial={reduce ? false : { opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -14 }}
+          exit={reduce ? undefined : { opacity: 0, y: -14 }}
           transition={{ duration: 0.35, ease: EASE }}
-          className={ACCENT}
+          className={cn(ACCENT, 'absolute inset-0')}
         >
           {word}
         </motion.span>
