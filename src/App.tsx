@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppShell } from '@/components/layout/AppShell'
 import { DataBootstrap } from '@/components/layout/DataBootstrap'
@@ -20,6 +20,7 @@ import TutorPage from '@/pages/TutorPage'
 import SearchPage from '@/pages/SearchPage'
 import SettingsPage from '@/pages/SettingsPage'
 import LeaderboardPage from '@/pages/LeaderboardPage'
+import NotFoundPage from '@/pages/NotFoundPage'
 import { warmSearchIndex } from '@/engines/search/engine'
 
 const queryClient = new QueryClient({
@@ -65,7 +66,7 @@ export default function App() {
             <Route path="/settings" element={<AppShell><SettingsPage /></AppShell>} />
             <Route path="/result/:id" element={<AppShell><TestResult /></AppShell>} />
             <Route path="/run/:id" element={<TestRunner />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </BrowserRouter>
       </DataBootstrap>

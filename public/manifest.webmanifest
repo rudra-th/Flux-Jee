@@ -1,0 +1,37 @@
+{
+  "name": "JEE Arena — The closest thing to the real JEE",
+  "short_name": "JEE Arena",
+  "description": "Every real PYQ since 2014, the exact NTA interface, an adaptive engine, analytics and an AI tutor — free, offline, forever.",
+  "lang": "en",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f17",
+  "theme_color": "#0b0f17",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Full Test",
+      "short_name": "Full Test",
+      "description": "Start a full NTA-replica mock test",
+      "url": "/test/full",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Question Bank",
+      "short_name": "Search",
+      "description": "Search the question bank",
+      "url": "/question-bank",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}

@@ -46,8 +46,6 @@ export default function SearchPage() {
     return ['Projectile Motion', 'Thermodynamics', 'Organic Chemistry', 'Probability', 'Matrices', 'Newton Laws', 'Integration', 'Chemical Bonding']
   }, [query])
 
-  const selected = results.find((r) => r.id === selectedId)
-
   return (
     <div>
       <PageHeader title="Question Search" subtitle={`Search ${count.toLocaleString()} questions across the syllabus`} />
@@ -138,8 +136,6 @@ export default function SearchPage() {
           </div>
         </>
       )}
-
-      {selected && null}
     </div>
   )
 }

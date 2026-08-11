@@ -8,12 +8,20 @@ import {
   useSpring,
   useInView,
   useReducedMotion,
+  useMotionValueEvent,
+  type MotionValue,
 } from 'framer-motion'
-import { Icon, type IconName } from '@/components/ui'
+import { Icon, Modal, type IconName } from '@/components/ui'
 import { TEST_MODES } from '@/constants/modes'
 import { cn } from '@/utils/cn'
 
 const EASE = [0.22, 1, 0.36, 1] as const
+
+/**
+ * The single brand accent used for emphasized phrases across sections.
+ * One consistent treatment — not a different rainbow per section.
+ */
+const ACCENT = 'bg-gradient-to-r from-primary to-info bg-clip-text text-transparent'
 
 function Reveal({
   children,
@@ -186,7 +194,7 @@ function RotatingWords() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -14 }}
           transition={{ duration: 0.35, ease: EASE }}
-          className="inline-block bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24] bg-clip-text text-transparent"
+          className={ACCENT}
         >
           {word}
         </motion.span>
@@ -241,7 +249,7 @@ function StatChip({
 function Eyebrow({ children }: { children: ReactNode }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">
-      <Icon name="sparkles" size={12} />
+      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
       {children}
     </span>
   )
@@ -1013,7 +1021,7 @@ function Hero() {
       <div className="sticky top-0 flex h-screen flex-col items-center justify-center overflow-hidden px-5 pt-16">
         <motion.div
           style={{ scaleX: smooth }}
-          className="absolute inset-x-0 top-0 z-40 h-[2px] origin-left bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24]"
+          className="absolute inset-x-0 top-0 z-40 h-[2px] origin-left bg-gradient-to-r from-primary to-info"
         />
         <div
           aria-hidden
@@ -1115,8 +1123,8 @@ const MARQUEE_ITEMS = [
 function Marquee() {
   const row = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS]
   return (
-    <div className="relative overflow-hidden border-y border-border bg-surface/50 py-5">
-      <div className="flex w-max animate-marquee items-center gap-10">
+    <div className="group relative overflow-hidden border-y border-border bg-surface/50 py-5">
+      <div className="flex w-max animate-marquee items-center gap-10 group-hover:[animation-play-state:paused]">
         {row.map((item, i) => (
           <span key={i} className="flex items-center gap-10 text-[13px] font-semibold text-text3">
             {item}
@@ -1128,81 +1136,497 @@ function Marquee() {
   )
 }
 
-/* ------------------------------- HOW IT WORKS ----------------------------- */
+/* ------------------------------ SCROLL JACK ------------------------------ */
 
-const HOW_STEPS: Array<{
+const JOURNEY_STEPS: Array<{
   n: string
-  icon: IconName
-  title: string
+  tag: string
+  headline: ReactNode
   desc: string
   accent: string
+  bullets: Array<{ icon: IconName; label: string }>
+  visual: 'test' | 'detect' | 'fix' | 'master'
 }> = [
   {
     n: '01',
-    icon: 'grid',
-    title: 'Pick your mode',
-    desc: 'Full NTA replica, chapter drills, daily sprints — or let the engine build your test from the chapters you keep getting wrong.',
+    tag: 'Practice',
+    headline: (
+      <>
+        Every real question.
+        <br />
+        <span className="text-[#60a5fa]">Every single mode.</span>
+      </>
+    ),
+    desc: 'Full NTA-replica papers, chapter drills, PYQs since 2014, marathons and speed runs. The mode you need is already here — pick one and go.',
     accent: '#60a5fa',
+    bullets: [
+      { icon: 'pyq', label: 'Real PYQs — every shift since 2014' },
+      { icon: 'keyboard', label: 'Pixel-faithful NTA interface' },
+      { icon: 'layers', label: '15 practice modes, one tap away' },
+    ],
+    visual: 'test',
   },
   {
     n: '02',
-    icon: 'keyboard',
-    title: 'Solve like exam day',
-    desc: 'The exact NTA screen: palette, timer, marking scheme and keyboard shortcuts. When the real paper opens, nothing feels new.',
+    tag: 'Detect',
+    headline: (
+      <>
+        Analytics find
+        <br />
+        <span className="text-[#a78bfa]">the exact gap.</span>
+      </>
+    ),
+    desc: 'Every answer is scored live. Accuracy, speed, attempt rate, chapter heatmaps — the engine knows precisely what is costing you marks.',
     accent: '#a78bfa',
+    bullets: [
+      { icon: 'line-chart', label: 'Chapter-level accuracy heatmaps' },
+      { icon: 'percent', label: 'Why you lose marks, in plain data' },
+      { icon: 'trending-up', label: 'Progress you can actually see' },
+    ],
+    visual: 'detect',
   },
   {
     n: '03',
-    icon: 'line-chart',
-    title: 'Get your battle plan',
-    desc: 'Every answer is scored in real time. Analytics find your weak points, and flashcards plus the AI tutor turn them into tomorrow\'s plan.',
+    tag: 'Fix',
+    headline: (
+      <>
+        Revise exactly
+        <br />
+        <span className="text-[#fbbf24]">what you missed.</span>
+      </>
+    ),
+    desc: 'Mistakes become flashcards. Weak chapters become tests. The AI tutor explains the one step that tripped you — nothing else.',
     accent: '#fbbf24',
+    bullets: [
+      { icon: 'mistake', label: 'Mistake notebook, built automatically' },
+      { icon: 'flashcard', label: 'Spaced repetition on your weak spots' },
+      { icon: 'brain', label: 'AI tutor that reads your attempt' },
+    ],
+    visual: 'fix',
+  },
+  {
+    n: '04',
+    tag: 'Master',
+    headline: (
+      <>
+        Watch the line
+        <br />
+        <span className="text-[#2fd87f]">keep going up.</span>
+      </>
+    ),
+    desc: 'Streaks, daily goals, smart re-attempts. The loop closes on itself — every day the engine has a sharper picture of what you need.',
+    accent: '#2fd87f',
+    bullets: [
+      { icon: 'flame', label: 'Streaks and daily targets' },
+      { icon: 'refresh', label: 'Auto re-attempt of weak chapters' },
+      { icon: 'award', label: 'Rank-ready by exam day' },
+    ],
+    visual: 'master',
   },
 ]
 
-function HowItWorks() {
+function JourneyTestVisual() {
+  const options = ['5 m/s', '7 m/s', '√50 m/s', '10 m/s']
+  const cells = Array.from({ length: 15 }, (_, i) =>
+    i === 7 ? 'current' : i % 3 === 0 ? 'answered' : i % 5 === 1 ? 'marked' : 'notvisited',
+  ) as Array<'current' | 'answered' | 'marked' | 'notvisited'>
   return (
-    <section id="how" className="relative mx-auto max-w-6xl scroll-mt-24 px-5 py-24 sm:py-32">
-      <SectionHeading
-        eyebrow="Three steps"
-        title={
-          <>
-            From question to rank —
-            <br />
-            <span className="bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24] bg-clip-text text-transparent">
-              in three moves.
-            </span>
-          </>
-        }
-        sub="No setup, no account, no studying the app instead of studying. Open it and start."
-      />
-
-      <div className="relative mt-14 grid gap-5 md:grid-cols-3">
-        <div
-          aria-hidden
-          className="absolute left-[16%] right-[16%] top-10 hidden h-px bg-gradient-to-r from-primary/0 via-primary/40 to-primary/0 md:block"
-        />
-        {HOW_STEPS.map((step, i) => (
-          <Reveal key={step.n} delay={i * 0.12}>
-            <TiltCard className="h-full" intensity={5}>
-              <div className="group relative flex h-full flex-col gap-4 rounded-2xl border border-border bg-surface p-6 transition-colors duration-200 hover:border-primary/35">
-                <span className="absolute right-5 top-4 font-mono text-[42px] font-bold leading-none text-surface3 transition-colors duration-200 group-hover:text-primary/25">
-                  {step.n}
-                </span>
-                <div
-                  className="relative z-10 flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"
-                  style={{ backgroundColor: `${step.accent}1f`, color: step.accent }}
-                >
-                  <Icon name={step.icon} size={23} />
-                </div>
-                <div className="relative z-10">
-                  <h3 className="text-[17px] font-bold text-text">{step.title}</h3>
-                  <p className="mt-2 text-[13px] leading-relaxed text-text2">{step.desc}</p>
-                </div>
-              </div>
-            </TiltCard>
-          </Reveal>
+    <div className="mx-auto w-full max-w-md rounded-2xl border border-border bg-surface/80 p-5 shadow-2xl backdrop-blur">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-text3">
+            Physics · Mechanics
+          </p>
+          <p className="mt-1 text-[11px] text-text3">Q08 of 75</p>
+        </div>
+        <span className="rounded-md bg-danger/15 px-2 py-0.5 font-mono text-[11px] font-bold text-danger">
+          12:42
+        </span>
+      </div>
+      <div className="mt-4 grid grid-cols-5 gap-1.5">
+        {cells.map((c, i) => (
+          <span
+            key={i}
+            className="flex h-6 items-center justify-center rounded text-[10px] font-bold text-white"
+            style={{ backgroundColor: CELL_COLOR[c] }}
+          >
+            {i + 1}
+          </span>
         ))}
+      </div>
+      <div className="mt-4 space-y-2">
+        {options.map((opt, i) => {
+          const active = i === 1
+          return (
+            <div
+              key={opt}
+              className={cn(
+                'flex items-center gap-2.5 rounded-lg border px-3 py-2 text-[12px] font-medium',
+                active
+                  ? 'border-[#60a5fa] bg-[#60a5fa]/10 text-text'
+                  : 'border-border bg-surface2 text-text2',
+              )}
+            >
+              <span
+                className={cn(
+                  'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[10px] font-bold',
+                  active
+                    ? 'border-[#60a5fa] bg-[#60a5fa] text-white'
+                    : 'border-border2 text-text3',
+                )}
+              >
+                {String.fromCharCode(65 + i)}
+              </span>
+              {opt}
+              {active ? <Icon name="check" size={12} className="ml-auto text-[#60a5fa]" /> : null}
+            </div>
+          )
+        })}
+      </div>
+      <div className="mt-4 flex items-center justify-between text-[10px] text-text3">
+        <span>Answered 43 · Marked 2</span>
+        <span className="font-mono">K · M · S shortcuts</span>
+      </div>
+    </div>
+  )
+}
+
+function JourneyDetectVisual() {
+  const bars = [42, 58, 47, 66, 61, 74, 70, 82, 79, 91]
+  const last = bars.length - 1
+  return (
+    <div className="mx-auto w-full max-w-md rounded-2xl border border-border bg-surface/80 p-5 shadow-2xl backdrop-blur">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-text3">Accuracy</p>
+          <p className="mt-0.5 text-2xl font-bold tracking-tight text-text">86.4%</p>
+        </div>
+        <span className="inline-flex items-center gap-1 rounded-full bg-[#a78bfa]/15 px-2.5 py-1 text-[11px] font-bold text-[#a78bfa]">
+          <Icon name="trending-up" size={13} /> +11.2%
+        </span>
+      </div>
+      <div className="mt-4 flex h-24 items-end gap-1.5">
+        {bars.map((h, i) => (
+          <motion.div
+            key={i}
+            initial={{ height: 0 }}
+            animate={{ height: `${h}%` }}
+            transition={{ duration: 0.7, delay: i * 0.05, ease: EASE }}
+            className={cn('flex-1 rounded-t-md', i === last ? 'bg-[#a78bfa]' : 'bg-surface3')}
+          />
+        ))}
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {[
+          { label: 'Attempt rate', value: '94%' },
+          { label: 'Time/q', value: '68s' },
+          { label: 'Weakest', value: 'Thermo' },
+        ].map((s) => (
+          <div key={s.label} className="rounded-lg border border-border bg-surface2 p-2.5 text-center">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-text3">{s.label}</p>
+            <p className="mt-0.5 text-[13px] font-bold text-text">{s.value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function JourneyFixVisual() {
+  return (
+    <div className="mx-auto w-full max-w-md space-y-3">
+      <div className="rounded-2xl border border-border bg-surface/80 p-5 text-center shadow-2xl backdrop-blur">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-text3">
+          Flashcard · Rotational Motion
+        </p>
+        <p className="mt-3 font-serif text-3xl font-semibold tracking-tight text-text">τ = I α</p>
+        <p className="mt-1 text-xs text-text2">
+          Torque = Moment of inertia × Angular acceleration
+        </p>
+        <div className="mx-auto mt-4 flex w-fit items-center gap-1.5 rounded-full bg-[#fbbf24]/10 px-3 py-1 text-[11px] font-semibold text-[#fbbf24]">
+          <Icon name="refresh" size={12} /> Tap to flip
+        </div>
+      </div>
+      <div className="rounded-2xl border border-border bg-surface/80 p-4 shadow-2xl backdrop-blur">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#fbbf24] to-[#f59e0b]">
+            <Icon name="brain" size={16} className="text-white" />
+          </div>
+          <div>
+            <p className="text-[12px] font-bold text-text">AI Tutor</p>
+            <p className="text-[10px] text-success">● online</p>
+          </div>
+        </div>
+        <div className="mt-3 rounded-2xl rounded-tl-sm bg-[#fbbf24]/12 px-3.5 py-2.5 text-[12px] leading-relaxed text-text">
+          You forgot to omit pure liquids from Kc. Only gases and aqueous species count — that one
+          line is worth ~1 mark per test.
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function JourneyMasterVisual() {
+  const navigate = useNavigate()
+  const bars = [38, 45, 52, 58, 64, 71, 78, 86]
+  const last = bars.length - 1
+  return (
+    <div className="mx-auto w-full max-w-md rounded-2xl border border-border bg-surface/80 p-5 text-center shadow-2xl backdrop-blur">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-text3">
+        Accuracy trajectory
+      </p>
+      <div className="mt-4 flex h-28 items-end justify-center gap-1.5">
+        {bars.map((h, i) => (
+          <motion.div
+            key={i}
+            initial={{ height: 0 }}
+            animate={{ height: `${h}%` }}
+            transition={{ duration: 0.7, delay: i * 0.05, ease: EASE }}
+            className="w-7 rounded-t-md"
+            style={{
+              background: i === last ? 'linear-gradient(180deg, #2fd87f, #179b55)' : 'var(--surface-3)',
+            }}
+          />
+        ))}
+      </div>
+      <p className="mt-4 text-4xl font-bold tracking-tight text-text">
+        86<span className="text-[#2fd87f]">.4%</span>
+        <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[#2fd87f]/15 px-2.5 py-1 align-middle text-[11px] font-bold text-[#2fd87f]">
+          <Icon name="trending-up" size={12} /> +11.2%
+        </span>
+      </p>
+      <button
+        onClick={() => navigate('/dashboard')}
+        className="focus-ring mt-5 w-full rounded-full bg-[#2fd87f] px-6 py-3 text-sm font-bold text-black transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
+      >
+        Start the method — free
+      </button>
+      <p className="mt-3 text-[10px] font-medium uppercase tracking-wider text-text3">
+        No account · No install · No ads
+      </p>
+    </div>
+  )
+}
+
+function JourneyPanel({
+  step,
+  index,
+  progress,
+  active,
+  children,
+}: {
+  step: (typeof JOURNEY_STEPS)[number]
+  index: number
+  progress: MotionValue<number>
+  active: boolean
+  children: ReactNode
+}) {
+  const isFirst = index === 0
+  const isLast = index === JOURNEY_STEPS.length - 1
+  const input = isFirst
+    ? [0, 0.5]
+    : isLast
+      ? [JOURNEY_STEPS.length - 1.5, JOURNEY_STEPS.length - 1]
+      : [index - 0.5, index, index + 0.5]
+  const opacity = useTransform(
+    progress,
+    input,
+    isFirst ? [1, 0] : isLast ? [0, 1] : [0, 1, 0],
+  )
+  const y = useTransform(
+    progress,
+    input,
+    isFirst ? [0, -64] : isLast ? [64, 0] : [64, 0, -64],
+  )
+  const scale = useTransform(
+    progress,
+    input,
+    isFirst ? [1, 0.95] : isLast ? [0.95, 1] : [0.95, 1, 0.95],
+  )
+
+  return (
+    <div className="pointer-events-none absolute inset-0">
+      <motion.div
+        data-journey-panel
+        style={{ opacity, y, scale }}
+        className={cn('flex h-full items-center', active && 'pointer-events-auto')}
+      >
+        <div className="grid w-full items-center gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-sm font-bold" style={{ color: step.accent }}>
+                {step.n}
+              </span>
+              <span className="h-px w-10" style={{ backgroundColor: step.accent }} />
+              <span
+                className="text-[11px] font-bold uppercase tracking-[0.18em]"
+                style={{ color: step.accent }}
+              >
+                {step.tag}
+              </span>
+            </div>
+            <h2 className="mt-5 text-4xl font-bold leading-[1.05] tracking-tight text-text sm:text-5xl md:text-6xl">
+              {step.headline}
+            </h2>
+            <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-text2 sm:text-base">
+              {step.desc}
+            </p>
+            <ul className="mt-7 space-y-3">
+              {step.bullets.map((b) => (
+                <li key={b.label} className="flex items-center gap-3 text-sm font-medium text-text">
+                  <span
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white"
+                    style={{ backgroundColor: step.accent, boxShadow: `0 6px 16px -4px ${step.accent}88` }}
+                  >
+                    <Icon name={b.icon} size={12} />
+                  </span>
+                  {b.label}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="hidden lg:block">{children}</div>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+function JourneyRail({
+  active,
+  progress,
+}: {
+  active: number
+  progress: MotionValue<number>
+}) {
+  const fill = useTransform(progress, [0, 1], ['0%', '100%'])
+  return (
+    <div
+      data-journey-rail
+      className="pointer-events-none absolute left-4 top-1/2 z-10 hidden -translate-y-1/2 sm:block lg:left-7"
+    >
+      <div className="relative h-64 w-px overflow-hidden rounded-full bg-surface3">
+        <motion.div
+          style={{
+            height: fill,
+            background: 'linear-gradient(180deg, #60a5fa, #a78bfa, #fbbf24, #2fd87f)',
+          }}
+          className="absolute inset-x-0 top-0 rounded-full"
+        />
+      </div>
+      <div className="absolute -left-[5px] top-0 flex h-64 flex-col justify-between">
+        {JOURNEY_STEPS.map((s, i) => (
+          <span
+            key={s.n}
+            className={cn(
+              'h-3 w-3 rounded-full ring-4 ring-bg transition-all duration-300',
+              active === i && 'scale-125',
+            )}
+            style={{ backgroundColor: active === i ? s.accent : 'var(--surface-3)' }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ScrollJourney() {
+  const reduce = useReducedMotion()
+  const ref = useRef<HTMLElement>(null)
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] })
+  const raw = useTransform(scrollYProgress, (v) =>
+    Math.min(JOURNEY_STEPS.length, Math.max(0, v * JOURNEY_STEPS.length)),
+  )
+  const smooth = useSpring(raw, { stiffness: 110, damping: 26, mass: 0.5 })
+  const [active, setActive] = useState(0)
+  const hintOpacity = useTransform(smooth, [0, 0.3], [1, 0])
+
+  useMotionValueEvent(smooth, 'change', (v) => {
+    const next = Math.max(0, Math.min(JOURNEY_STEPS.length - 1, Math.round(v - 0.5)))
+    setActive((prev) => (prev === next ? prev : next))
+  })
+
+  if (reduce) {
+    return (
+      <section id="how" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-24 sm:py-32">
+        <SectionHeading
+          eyebrow="The method"
+          title={
+            <>
+              Practice. Detect. Fix. Repeat.
+              <br />
+              <span className={ACCENT}>
+                until the paper feels easy.
+              </span>
+            </>
+          }
+          sub="Four steps that loop until exam day — every one of them automated inside the app."
+        />
+        <div className="mt-14 grid gap-5 md:grid-cols-2">
+          {JOURNEY_STEPS.map((s) => (
+            <div key={s.n} className="rounded-2xl border border-border bg-surface p-6">
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-sm font-bold" style={{ color: s.accent }}>
+                  {s.n}
+                </span>
+                <span className="h-px w-10" style={{ backgroundColor: s.accent }} />
+                <span
+                  className="text-[11px] font-bold uppercase tracking-[0.18em]"
+                  style={{ color: s.accent }}
+                >
+                  {s.tag}
+                </span>
+              </div>
+              <h3 className="mt-4 text-2xl font-bold tracking-tight text-text">{s.headline}</h3>
+              <p className="mt-3 text-[13px] leading-relaxed text-text2">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section ref={ref} id="how" className="relative" style={{ height: '520vh' }}>
+      <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden px-5">
+        <motion.div
+          style={{ opacity: hintOpacity }}
+          className="pointer-events-none absolute left-1/2 top-6 z-10 -translate-x-1/2"
+        >
+          <div className="flex items-center gap-2 rounded-full border border-border bg-surface/70 px-4 py-2 text-[11px] font-semibold text-text2 backdrop-blur">
+            The method — scroll to move through it
+            <Icon name="chevron-down" size={12} className="animate-bounce text-primary" />
+          </div>
+        </motion.div>
+
+        <JourneyRail active={active} progress={smooth} />
+
+        <div className="relative mx-auto h-full w-full max-w-6xl lg:pl-16">
+          {JOURNEY_STEPS.map((s, i) => (
+            <JourneyPanel key={s.n} step={s} index={i} progress={smooth} active={active === i}>
+              {s.visual === 'test' ? (
+                <JourneyTestVisual />
+              ) : s.visual === 'detect' ? (
+                <JourneyDetectVisual />
+              ) : s.visual === 'fix' ? (
+                <JourneyFixVisual />
+              ) : (
+                <JourneyMasterVisual />
+              )}
+            </JourneyPanel>
+          ))}
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 h-[3px] bg-surface3">
+          <motion.div
+            style={{
+              scaleX: scrollYProgress,
+              transformOrigin: 'left',
+              background: 'linear-gradient(90deg, var(--primary), var(--info))',
+            }}
+            className="h-full"
+          />
+        </div>
       </div>
     </section>
   )
@@ -1220,7 +1644,7 @@ function ModesGrid() {
           <>
             One platform.
             <br />
-            <span className="bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24] bg-clip-text text-transparent">
+            <span className={ACCENT}>
               Every way to practice.
             </span>
           </>
@@ -1231,33 +1655,31 @@ function ModesGrid() {
       <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {TEST_MODES.map((m, i) => (
           <Reveal key={m.id} delay={Math.min(i * 0.05, 0.4)}>
-            <TiltCard className="h-full">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="group flex h-full w-full flex-col gap-3 rounded-2xl border border-border bg-surface p-5 text-left transition-colors duration-200 hover:border-primary/35 hover:bg-surface2/60"
+            <button
+              onClick={() => navigate(m.path)}
+              className="group flex h-full w-full flex-col gap-3 rounded-2xl border border-border bg-surface p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-surface2/60 hover:shadow-lg hover:shadow-black/20"
+            >
+              <div
+                className="flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"
+                style={{ backgroundColor: `${m.color}1f`, color: m.color }}
               >
-                <div
-                  className="flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"
-                  style={{ backgroundColor: `${m.color}1f`, color: m.color }}
-                >
-                  <Icon name={m.icon as IconName} size={21} />
+                <Icon name={m.icon as IconName} size={21} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-[15px] font-bold text-text">{m.name}</p>
+                  {m.badge ? (
+                    <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-accent">
+                      {m.badge}
+                    </span>
+                  ) : null}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-[15px] font-bold text-text">{m.name}</p>
-                    {m.badge ? (
-                      <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-accent">
-                        {m.badge}
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="mt-1.5 text-[13px] leading-relaxed text-text2">{m.description}</p>
-                </div>
-                <span className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                  Try it <Icon name="arrow-right" size={13} />
-                </span>
-              </button>
-            </TiltCard>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-text2">{m.description}</p>
+              </div>
+              <span className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                Try it <Icon name="arrow-right" size={13} />
+              </span>
+            </button>
           </Reveal>
         ))}
       </div>
@@ -1361,7 +1783,7 @@ function SubjectsCoverage() {
               <>
                 Every chapter.
                 <br />
-                <span className="bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24] bg-clip-text text-transparent">
+                <span className={ACCENT}>
                   Every micro-topic.
                 </span>
               </>
@@ -1431,7 +1853,7 @@ function FullTestFeature() {
             <>
               Walk into the exam
               <br />
-              <span className="bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24] bg-clip-text text-transparent">
+              <span className={ACCENT}>
                 before the exam.
               </span>
             </>
@@ -1507,20 +1929,18 @@ function FeaturesGrid() {
       <div className="mt-14 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {FEATURES.map((f, i) => (
           <Reveal key={f.title} delay={Math.min(i * 0.06, 0.4)}>
-            <TiltCard className="h-full" intensity={5}>
-              <div className="group flex h-full flex-col gap-4 rounded-2xl border border-border bg-surface p-6 transition-colors duration-200 hover:border-primary/35">
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"
-                  style={{ backgroundColor: `${f.accent}1f`, color: f.accent }}
-                >
-                  <Icon name={f.icon} size={23} />
-                </div>
-                <div>
-                  <h3 className="text-[17px] font-bold text-text">{f.title}</h3>
-                  <p className="mt-2 text-[13px] leading-relaxed text-text2">{f.desc}</p>
-                </div>
+            <div className="group flex h-full flex-col gap-4 rounded-2xl border border-border bg-surface p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-lg hover:shadow-black/20">
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"
+                style={{ backgroundColor: `${f.accent}1f`, color: f.accent }}
+              >
+                <Icon name={f.icon} size={23} />
               </div>
-            </TiltCard>
+              <div>
+                <h3 className="text-[17px] font-bold text-text">{f.title}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-text2">{f.desc}</p>
+              </div>
+            </div>
           </Reveal>
         ))}
       </div>
@@ -1552,7 +1972,7 @@ function AnalyticsFeature() {
               <>
                 Your rank is a
                 <br />
-                <span className="bg-gradient-to-r from-[#2fd87f] via-[#60a5fa] to-[#a78bfa] bg-clip-text text-transparent">
+                <span className={ACCENT}>
                   data problem.
                 </span>
               </>
@@ -1605,14 +2025,14 @@ function RevisionFeature() {
         <SectionHeading
           eyebrow="Learn & revise"
           title={
-            <>
-              The gap between practice
-              <br />
-              and{' '}
-              <span className="bg-gradient-to-r from-[#b06bf5] via-[#60a5fa] to-[#38bdf8] bg-clip-text text-transparent">
-                remembering.
-              </span>
-            </>
+          <>
+            The gap between practice
+            <br />
+            and{' '}
+            <span className={ACCENT}>
+              remembering.
+            </span>
+          </>
           }
           sub="Flashcards that adapt to what you forget, and an AI tutor that explains exactly the step you missed — not the whole solution you already know."
         />
@@ -1759,7 +2179,7 @@ function AiTutorFeature() {
               <>
                 Stuck on a question?
                 <br />
-                <span className="bg-gradient-to-r from-[#f5a524] via-[#fbbf24] to-[#60a5fa] bg-clip-text text-transparent">
+                <span className={ACCENT}>
                   Ask your mistake.
                 </span>
               </>
@@ -1812,13 +2232,13 @@ function Compare() {
         <SectionHeading
           eyebrow="Built different"
           title={
-            <>
-              Everything they charge for.
-              <br />
-              <span className="bg-gradient-to-r from-[#2fd87f] via-[#60a5fa] to-[#a78bfa] bg-clip-text text-transparent">
-                Ours is free.
-              </span>
-            </>
+          <>
+            Everything they charge for.
+            <br />
+            <span className={ACCENT}>
+              Ours is free.
+            </span>
+          </>
           }
           sub="We compared ourselves to every serious prep platform so you don't have to."
         />
@@ -1873,16 +2293,9 @@ function BigNumbers() {
   return (
     <section className="mx-auto max-w-6xl px-5 py-24 sm:py-32">
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-border bg-border md:grid-cols-5">
-        {BIG_NUMBERS.map((n, i) => (
+        {BIG_NUMBERS.map((n) => (
           <div key={n.label} className="flex flex-col items-center gap-1 bg-surface px-4 py-10">
-            <span
-              className={cn(
-                'bg-gradient-to-r bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl',
-                i % 2 === 0
-                  ? 'from-[#60a5fa] to-[#a78bfa]'
-                  : 'from-[#a78bfa] to-[#fbbf24]',
-              )}
-            >
+            <span className={cn(ACCENT, 'text-4xl font-bold tracking-tight sm:text-5xl')}>
               <CountUp to={n.to} suffix={n.suffix} />
             </span>
             <span className="text-center text-[12px] font-medium text-text3">{n.label}</span>
@@ -2031,7 +2444,7 @@ function FinalCta() {
           <h2 className="mt-6 text-4xl font-bold leading-[1.05] tracking-tighter text-text sm:text-6xl md:text-7xl">
             Tomorrow&apos;s rank
             <br />
-            <span className="bg-gradient-to-r from-[#60a5fa] via-[#a78bfa] to-[#fbbf24] bg-clip-text text-transparent">
+            <span className={ACCENT}>
               is built today.
             </span>
           </h2>
@@ -2058,7 +2471,42 @@ function FinalCta() {
 
 /* --------------------------------- FOOTER --------------------------------- */
 
-const FOOTER_LINKS: Array<{ title: string; links: Array<{ label: string; href?: string }> }> = [
+const LEGAL_DOCS = {
+  terms: {
+    title: 'Terms of Use',
+    body: [
+      'JEE Arena is provided free of charge, on an "as-is" and "as-available" basis, for personal, non-commercial practice and study purposes.',
+      'By using JEE Arena you agree not to resell, redistribute or claim ownership of the questions, content or code, and not to use the platform in any way that violates applicable laws.',
+      'Your progress data is stored locally on your own device. We do not collect, store or transmit personal information.',
+      'We may update these terms at any time. Continued use of the app after changes means you accept the revised terms.',
+    ],
+  },
+  privacy: {
+    title: 'Privacy Policy',
+    body: [
+      'JEE Arena is designed to work fully offline. Your test results, mistakes, flashcards and analytics are stored exclusively in your browser via IndexedDB and never leave your device.',
+      'No tracking cookies, no analytics scripts, no third-party advertising and no account registration are used.',
+      'If you voluntarily reach out via the public GitHub repository, only the information you choose to share is used, solely to respond to you.',
+      'This policy may be updated as the app evolves; the latest version will always be shown here.',
+    ],
+  },
+  disclaimer: {
+    title: 'Disclaimer',
+    body: [
+      'JEE Arena is an independent, non-commercial practice platform and is not affiliated with, endorsed by, or connected to the National Testing Agency (NTA) or any examination authority.',
+      '"JEE", "JEE Main" and "JEE Advanced" are trademarks of their respective owners, used here solely for identification and educational practice.',
+      'Previous-year questions are compiled from publicly available sources and are used for practice purposes only.',
+      'No guarantee of marks, ranks or selection is expressed or implied. All usage is at your own discretion.',
+    ],
+  },
+} as const
+
+type LegalKey = keyof typeof LEGAL_DOCS
+
+const FOOTER_LINKS: Array<{
+  title: string
+  links: Array<{ label: string; href?: string; path?: string; legal?: LegalKey }>
+}> = [
   {
     title: 'Product',
     links: [
@@ -2071,10 +2519,10 @@ const FOOTER_LINKS: Array<{ title: string; links: Array<{ label: string; href?: 
   {
     title: 'Resources',
     links: [
-      { label: 'Question Bank' },
-      { label: 'Flashcards' },
-      { label: 'AI Tutor' },
-      { label: 'Mistake Notebook' },
+      { label: 'Question Bank', path: '/question-bank' },
+      { label: 'Flashcards', path: '/flashcards' },
+      { label: 'AI Tutor', path: '/tutor' },
+      { label: 'Mistake Notebook', path: '/mistakes' },
     ],
   },
   {
@@ -2082,27 +2530,37 @@ const FOOTER_LINKS: Array<{ title: string; links: Array<{ label: string; href?: 
     links: [
       { label: 'Made by Rudra', href: 'https://github.com/rudra-th' },
       { label: 'GitHub', href: 'https://github.com/rudra-th' },
-      { label: 'Open Source' },
+      { label: 'Open Source', href: 'https://github.com/rudra-th' },
     ],
   },
   {
     title: 'Legal',
-    links: [{ label: 'Terms of Use' }, { label: 'Privacy Policy' }, { label: 'Disclaimer' }],
+    links: [
+      { label: 'Terms of Use', legal: 'terms' },
+      { label: 'Privacy Policy', legal: 'privacy' },
+      { label: 'Disclaimer', legal: 'disclaimer' },
+    ],
   },
 ]
 
 function Footer() {
+  const navigate = useNavigate()
+  const [legal, setLegal] = useState<LegalKey | null>(null)
+
   return (
     <footer className="border-t border-border bg-surface/60">
       <div className="mx-auto max-w-6xl px-5 py-16">
         <div className="grid gap-12 md:grid-cols-[1.4fr_repeat(4,1fr)]">
           <div>
-            <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="focus-ring flex items-center gap-2.5 text-left"
+            >
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary2 shadow-lg shadow-primary/30">
                 <Icon name="target" size={19} className="text-white" />
               </div>
               <span className="text-[15px] font-bold tracking-tight text-text">JEE Arena</span>
-            </div>
+            </button>
             <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-text2">
               The closest experience to the real JEE. Offline-first, free forever, built for
               aspirants who don&apos;t give themselves excuses.
@@ -2125,9 +2583,9 @@ function Footer() {
                 {col.title}
               </p>
               <ul className="mt-4 space-y-2.5">
-                {col.links.map((l) =>
-                  l.href ? (
-                    <li key={l.label}>
+                {col.links.map((l) => (
+                  <li key={l.label}>
+                    {l.href ? (
                       <a
                         href={l.href}
                         {...(l.href.startsWith('http')
@@ -2137,13 +2595,23 @@ function Footer() {
                       >
                         {l.label}
                       </a>
-                    </li>
-                  ) : (
-                    <li key={l.label} className="cursor-pointer text-[13px] text-text2 transition-colors hover:text-text">
-                      {l.label}
-                    </li>
-                  ),
-                )}
+                    ) : l.path ? (
+                      <button
+                        onClick={() => navigate(l.path!)}
+                        className="focus-ring text-[13px] text-text2 transition-colors hover:text-text"
+                      >
+                        {l.label}
+                      </button>
+                    ) : l.legal ? (
+                      <button
+                        onClick={() => setLegal(l.legal!)}
+                        className="focus-ring text-[13px] text-text2 transition-colors hover:text-text"
+                      >
+                        {l.label}
+                      </button>
+                    ) : null}
+                  </li>
+                ))}
               </ul>
             </div>
           ))}
@@ -2171,7 +2639,60 @@ function Footer() {
           </span>
         </div>
       </div>
+
+      <Modal
+        open={legal !== null}
+        onClose={() => setLegal(null)}
+        title={legal ? LEGAL_DOCS[legal].title : ''}
+        size="lg"
+      >
+        <div className="space-y-4 text-sm leading-relaxed text-text2">
+          {legal ? LEGAL_DOCS[legal].body.map((p) => <p key={p}>{p}</p>) : null}
+        </div>
+      </Modal>
     </footer>
+  )
+}
+
+/* ------------------------------ SCROLL CHROME ----------------------------- */
+
+function ScrollProgress() {
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, { stiffness: 120, damping: 30, restDelta: 0.001 })
+  return (
+    <motion.div
+      style={{ scaleX }}
+      className="fixed inset-x-0 top-0 z-[80] h-[3px] origin-left bg-gradient-to-r from-primary to-info"
+    />
+  )
+}
+
+function BackToTop() {
+  const [show, setShow] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setShow(window.scrollY > 800)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.button
+          initial={{ opacity: 0, y: 16, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 16, scale: 0.9 }}
+          transition={{ duration: 0.2, ease: EASE }}
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="focus-ring fixed bottom-6 right-6 z-[80] flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface/90 text-text shadow-2xl backdrop-blur transition-colors hover:border-primary/50 hover:text-primary"
+          aria-label="Back to top"
+        >
+          <Icon name="chevron-up" size={20} />
+        </motion.button>
+      )}
+    </AnimatePresence>
   )
 }
 
@@ -2180,19 +2701,12 @@ function Footer() {
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-bg text-text">
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-[70] opacity-[0.04] mix-blend-overlay"
-        style={{
-          backgroundImage:
-            'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'160\' height=\'160\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'2\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
-        }}
-      />
+      <ScrollProgress />
       <Nav />
       <main>
         <Hero />
         <Marquee />
-        <HowItWorks />
+        <ScrollJourney />
         <ModesGrid />
         <SubjectsCoverage />
         <FullTestFeature />
@@ -2207,6 +2721,7 @@ export default function LandingPage() {
         <FinalCta />
       </main>
       <Footer />
+      <BackToTop />
     </div>
   )
 }

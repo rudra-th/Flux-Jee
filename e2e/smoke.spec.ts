@@ -49,8 +49,9 @@ async function answerCurrentQuestion(page: Page) {
   await option.click()
 }
 
-/** Wait for the app shell + home page (bootstrap must have completed). */
+/** Open the app shell home (the landing page now owns "/"). */
 async function waitForHome(page: Page) {
+  await page.goto('/dashboard')
   await expect(page.getByRole('heading', { name: /Welcome back/ })).toBeVisible({ timeout: 240_000 })
 }
 
@@ -60,13 +61,64 @@ test('first boot provisions the question bank and renders home', async ({ shared
     page.on('pageerror', (e) => pageErrors.push(e.message))
 
     await page.goto('/')
-
     // Seeding 1900+ questions takes a while; wait for the real home page.
     await waitForHome(page)
-    await expect(page).toHaveURL(/\/$/)
+    await expect(page).toHaveURL(/\/dashboard\/?$/)
 
     // Daily challenge only reports "Questions ready" when questions exist.
     await expect(page.getByText('Questions ready', { exact: true })).toBeVisible({ timeout: 60_000 })
+
+    expect(pageErrors).toEqual([])
+  })
+})
+
+// Runs after first boot so the bank is already provisioned and the landing
+// page renders immediately (the bootstrap overlay covers the whole app).
+test('landing page renders all sections, then opens the app', async ({ sharedContext }) => {
+  await withPage(sharedContext, async (page) => {
+    const pageErrors: string[] = []
+    page.on('pageerror', (e) => pageErrors.push(e.message))
+
+    await page.goto('/')
+    await expect(page).toHaveURL(/\/$/)
+
+    // Hero + nav render immediately.
+    await expect(page.getByRole('button', { name: 'Open App' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Start Practicing/ }).first()).toBeVisible()
+
+    // Scroll through the page so the Reveal-wrapped section headings mount.
+    await page.evaluate(async () => {
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+      const total = document.body.scrollHeight
+      for (let y = 0; y <= total; y += 500) {
+        window.scrollTo(0, y)
+        await sleep(40)
+      }
+      for (let y = total; y >= 0; y -= 500) {
+        window.scrollTo(0, y)
+        await sleep(40)
+      }
+      window.scrollTo(0, 0)
+    })
+
+    for (const name of [
+      /Every real question/i,
+      /Every way to practice/i,
+      /Every micro-topic/i,
+      /before the exam/i,
+      /data problem/i,
+      /remembering/i,
+      /Ask your mistake/i,
+      /Ours is free/i,
+      /is built today/i,
+    ]) {
+      await expect(page.getByRole('heading', { name })).toBeVisible()
+    }
+
+    // A practice-mode card navigates straight into the matching builder.
+    await page.getByRole('button', { name: /Custom Test/ }).first().click()
+    await expect(page).toHaveURL(/\/test\/custom/)
+    await expect(page.getByRole('heading', { name: 'Custom Test' })).toBeVisible()
 
     expect(pageErrors).toEqual([])
   })
