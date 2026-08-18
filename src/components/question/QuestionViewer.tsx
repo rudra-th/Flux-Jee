@@ -171,8 +171,7 @@ export function QuestionViewer({
               </span>
               {isShowAnswer && correctIndices.includes(idx) ? (
                 <Icon name="check" size={16} className="shrink-0 text-success" />
-              ) : null}
-              {isMultiple && selected.includes(idx) ? (
+              ) : isMultiple && selected.includes(idx) ? (
                 <Icon name="check" size={16} className="shrink-0 text-primary" />
               ) : null}
             </button>

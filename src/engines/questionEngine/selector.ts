@@ -1,6 +1,7 @@
 import { db } from '@/db'
 import type { Question, QuestionFilters } from '@/types/question'
 import { mulberry32, seededShuffle } from '@/utils/cn'
+import { getShuffledQuestion } from '@/engines/testBuilder'
 
 export interface SelectionOptions extends QuestionFilters {
   limit?: number
@@ -103,7 +104,7 @@ export async function selectQuestions(opts: SelectionOptions): Promise<Question[
 }
 
 export async function getQuestionById(id: string): Promise<Question | undefined> {
-  return db.questions.get(id)
+  return getShuffledQuestion(id) ?? db.questions.get(id)
 }
 
 export async function getQuestionsByIds(ids: string[]): Promise<Question[]> {

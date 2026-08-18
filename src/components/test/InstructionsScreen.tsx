@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Button, Card, Icon } from '@/components/ui'
 import { NTA_INSTRUCTIONS } from '@/constants/exams'
 import { formatDuration } from '@/utils/time'
@@ -18,6 +19,7 @@ export function InstructionsScreen({
   timeLeft?: number
 }) {
   const { settings } = useSettingsStore()
+  const [agreed, setAgreed] = useState(false)
   const instructions = NTA_INSTRUCTIONS[config.exam] ?? NTA_INSTRUCTIONS['jee-main'] ?? []
 
   return (
@@ -81,7 +83,12 @@ export function InstructionsScreen({
           </div>
 
           <label className="mt-6 flex items-center gap-2 text-sm text-text2">
-            <input type="checkbox" id="agree" className="h-4 w-4 rounded border-border accent-[var(--primary)]" />
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="h-4 w-4 rounded border-border accent-[var(--primary)]"
+            />
             I have read and understood all the instructions.
           </label>
         </div>
@@ -89,13 +96,13 @@ export function InstructionsScreen({
         <div className="flex items-center justify-end gap-3 border-t border-border bg-surface2/40 px-6 py-4">
           {hasDraft && onResume && timeLeft !== undefined ? (
             <>
-              <Button variant="secondary" onClick={onResume}>
+              <Button variant="secondary" onClick={onResume} disabled={!agreed}>
                 <Icon name="refresh" size={16} /> Resume ({formatDuration(timeLeft)} left)
               </Button>
-              <Button onClick={onStart}>Restart Test</Button>
+              <Button onClick={onStart} disabled={!agreed}>Restart Test</Button>
             </>
           ) : (
-            <Button onClick={onStart} size="lg">
+            <Button onClick={onStart} size="lg" disabled={!agreed}>
               <Icon name="play" size={18} /> Start Test
             </Button>
           )}

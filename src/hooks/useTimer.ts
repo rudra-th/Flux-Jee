@@ -13,14 +13,19 @@ export function useCountdown(
   const endFired = useRef(false)
   const onEndRef = useRef(onEnd)
   onEndRef.current = onEnd
+  const hasReset = useRef(false)
 
   const reset = useCallback((duration?: number) => {
     setRemaining(duration ?? durationSeconds)
     endFired.current = false
+    hasReset.current = true
   }, [durationSeconds])
 
   useEffect(() => {
     if (!running) return
+    if (hasReset.current) {
+      hasReset.current = false
+    }
     const start = Date.now()
     const initial = remaining
     const id = setInterval(() => {
@@ -36,7 +41,7 @@ export function useCountdown(
       }
     }, 500)
     return () => clearInterval(id)
-  }, [running, remaining === durationSeconds, durationSeconds])
+  }, [running, remaining, durationSeconds])
 
   return { remaining, reset }
 }

@@ -24,6 +24,10 @@ export function Timer({
   const urgent = remaining <= 600 && remaining > 60
 
   useEffect(() => {
+    if (remaining === total) setFired(new Set())
+  }, [remaining, total])
+
+  useEffect(() => {
     if (!running || paused) return
     for (const w of warnings) {
       if (remaining === w && !fired.has(w)) {
@@ -32,7 +36,7 @@ export function Timer({
           remaining > 60
             ? `⏰ ${Math.floor(remaining / 60)} minute(s) remaining!`
             : `⚠️ Only ${remaining} seconds left!`,
-          remaining <= 60 ? 'warning' : 'warning',
+          remaining <= 60 ? 'error' : 'warning',
         )
       }
     }
@@ -42,7 +46,7 @@ export function Timer({
   return (
     <div className="flex items-center gap-3">
       <div className="relative flex flex-col items-center">
-        <svg width="44" height="44" viewBox="0 0 44 44" className="-rotate-90">
+        <svg width="44" height="44" viewBox="0 0 44 44" className={cn('-rotate-90', paused && 'opacity-50')}>
           <circle cx="22" cy="22" r="19" fill="none" stroke="var(--surface-3)" strokeWidth="4" />
           <circle
             cx="22"
@@ -66,6 +70,9 @@ export function Timer({
           {formatClock(remaining)}
         </span>
       </div>
+      {paused && (
+        <span className="text-[11px] font-semibold text-warning">PAUSED</span>
+      )}
     </div>
   )
 }

@@ -155,6 +155,10 @@ export default function TestBuilder() {
       pushToast('Select at least one subject.', 'error')
       return
     }
+    if (state.totalQuestions < 1 || state.timeLimitMinutes < 5) {
+      pushToast('Please enter valid question count (≥1) and time limit (≥5 min).', 'error')
+      return
+    }
     setBuilding(true)
     try {
       let config: TestConfig
@@ -303,7 +307,10 @@ export default function TestBuilder() {
                   min={1}
                   max={120}
                   value={state.totalQuestions}
-                  onChange={(e) => update({ totalQuestions: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    if (!Number.isNaN(v) && v >= 1) update({ totalQuestions: Math.min(120, Math.max(1, v)) })
+                  }}
                 />
               </Field>
               <Field label="Time Limit (minutes)">
@@ -311,7 +318,10 @@ export default function TestBuilder() {
                   type="number"
                   min={5}
                   value={state.timeLimitMinutes}
-                  onChange={(e) => update({ timeLimitMinutes: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    if (!Number.isNaN(v) && v >= 5) update({ timeLimitMinutes: Math.max(5, v) })
+                  }}
                 />
               </Field>
             </div>

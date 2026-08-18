@@ -50,7 +50,7 @@ export function SubmitDialog({
 
   const rows = [
     { label: 'Answered', value: summary.answered, color: 'var(--palette-answered)' },
-    { label: 'Not Answered', value: summary.notAnswered, color: 'var(--palette-notvisited)' },
+    { label: 'Not Answered', value: summary.notAnswered, color: 'var(--surface-3)' },
     { label: 'Marked for Review', value: summary.markedOnly, color: 'var(--palette-marked)' },
     { label: 'Marked + Answered', value: summary.markedAnswered, color: 'var(--palette-answeredmarked)' },
     { label: 'Not Visited', value: summary.notVisited, color: 'var(--palette-notvisited)' },

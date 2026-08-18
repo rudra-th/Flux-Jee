@@ -30,10 +30,15 @@ export async function computeAdaptiveProfile(): Promise<AdaptiveProfile> {
   }
 
   const chapterMap = new Map<string, ChapterPerformance>()
+  const uniqueIds = [...new Set(records.map((r) => r.questionId))]
+  const questions = await db.questions.bulkGet(uniqueIds)
+  const qMap = new Map<string, typeof questions[0]>()
+  for (const q of questions) {
+    if (q) qMap.set(q.id, q)
+  }
   for (const r of records) {
     if (!r.lastAttemptedAt) continue
-    // resolve chapter from question
-    const q = await db.questions.get(r.questionId)
+    const q = qMap.get(r.questionId)
     if (!q) continue
     const key = `${q.subject}|${q.chapter}`
     const entry = chapterMap.get(key) ?? {
