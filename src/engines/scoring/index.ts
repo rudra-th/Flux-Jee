@@ -3,7 +3,6 @@ import type { Question } from '@/types/question'
 import type { TestConfig, TestResult, QuestionPerformance, AnsweredOption } from '@/types/test'
 import { evaluateAnswer } from '@/utils/markScheme'
 import { round } from '@/utils/cn'
-import { getShuffledQuestion } from '@/engines/testBuilder'
 
 /**
  * Score a completed test by fetching question data and evaluating
@@ -29,7 +28,6 @@ export async function scoreTestRun(
   let totalGuesses = 0
   let correct = 0
   let wrong = 0
-  let partial = 0
   let unattempted = 0
 
   for (const section of config.sections) {
@@ -66,7 +64,6 @@ export async function scoreTestRun(
 
       if (evaluation.result === 'correct') correct++
       else if (evaluation.result === 'wrong') wrong++
-      else if (evaluation.result === 'partial') partial++
       else unattempted++
 
       if (isGuessed) {
@@ -116,7 +113,7 @@ export async function scoreTestRun(
     totalTimeSpent += secTime
   }
 
-  const attempted = correct + wrong + partial
+  const attempted = correct + wrong
   const accuracy = attempted > 0 ? round((correct / attempted) * 100) : 0
   const attemptRate = maxMarks / 4 > 0 ? round((attempted / (maxMarks / 4)) * 100) : 0
 
@@ -144,19 +141,9 @@ export async function scoreTestRun(
 
 async function getQuestionsMap(ids: string[]): Promise<Record<string, Question>> {
   const map: Record<string, Question> = {}
-  const shuffled = new Map<string, Question>()
-  const dbIds: string[] = []
   for (const id of ids) {
-    const sq = getShuffledQuestion(id)
-    if (sq) shuffled.set(id, sq)
-    else dbIds.push(id)
-  }
-  const rows = await db.questions.bulkGet(dbIds)
-  for (const q of rows) {
-    if (q) map[q.id] = q
-  }
-  for (const [id, sq] of shuffled) {
-    map[id] = sq
+    const q = await db.questions.get(id)
+    if (q) map[id] = q
   }
   return map
 }

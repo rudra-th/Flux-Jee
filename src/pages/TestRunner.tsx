@@ -167,9 +167,7 @@ export default function TestRunner() {
     return doSubmit(true)
   }, [doSubmit, pushToast])
 
-  useEffect(() => {
-    doSubmitRef.current = handleAutoSubmit
-  }, [handleAutoSubmit])
+  doSubmitRef.current = handleAutoSubmit
 
   // Pause overlay countdown
   const handlePause = () => {
@@ -214,7 +212,7 @@ export default function TestRunner() {
       },
       'ctrl+enter': () => setSubmitOpen(true),
       Escape: () => {
-        if (phase === 'running' && !submitOpen) handlePause()
+        if (phase === 'running') handlePause()
       },
     },
     phase === 'running',
@@ -273,18 +271,16 @@ export default function TestRunner() {
           </div>
         </div>
 
-        <div className="mx-auto flex items-center gap-2">
-          <span className="hidden shrink-0 rounded-md bg-surface2 px-2 py-1 text-[11px] font-semibold text-text2 md:inline">
+        <div className="mx-auto flex items-center gap-3">
+          <span className="hidden rounded-md bg-surface2 px-2 py-1 text-[11px] font-semibold text-text2 md:inline">
             {sectionName}
           </span>
-          <div className="shrink-0">
-            <Timer
-              remaining={timeRemaining}
-              total={config.durationSeconds}
-              running={phase === 'running'}
-              paused={phase === 'paused'}
-            />
-          </div>
+          <Timer
+            remaining={timeRemaining}
+            total={config.durationSeconds}
+            running={phase === 'running'}
+            paused={phase === 'paused'}
+          />
         </div>
 
         <div className="flex items-center gap-2">

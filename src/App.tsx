@@ -16,6 +16,7 @@ import MistakesPage from '@/pages/MistakesPage'
 import BookmarksPage from '@/pages/BookmarksPage'
 import FlashcardsPage from '@/pages/FlashcardsPage'
 import FormulasPage from '@/pages/FormulasPage'
+import TutorPage from '@/pages/TutorPage'
 import SearchPage from '@/pages/SearchPage'
 import SettingsPage from '@/pages/SettingsPage'
 import LeaderboardPage from '@/pages/LeaderboardPage'
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="/mistakes" element={<AppShell><MistakesPage /></AppShell>} />
             <Route path="/bookmarks" element={<AppShell><BookmarksPage /></AppShell>} />
             <Route path="/flashcards" element={<AppShell><FlashcardsPage /></AppShell>} />
+            <Route path="/tutor" element={<AppShell><TutorPage /></AppShell>} />
             <Route path="/formulas" element={<AppShell><FormulasPage /></AppShell>} />
             <Route path="/settings" element={<AppShell><SettingsPage /></AppShell>} />
             <Route path="/result/:id" element={<AppShell><TestResult /></AppShell>} />

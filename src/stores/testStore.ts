@@ -29,6 +29,7 @@ interface TestState {
   clearAnswer: (questionId: string) => void
   toggleMarkReview: (questionId: string) => void
   markVisited: (questionId: string) => void
+  tick: () => void
   saveAndNext: () => void
   markAndNext: () => void
   pause: () => void
@@ -38,9 +39,9 @@ interface TestState {
   syncToDraft: (draft: TestDraft) => void
 }
 
-const emptyAnswer = (questionId: string, sectionId?: string): AnsweredOption => ({
+const emptyAnswer = (questionId: string): AnsweredOption => ({
   questionId,
-  sectionId: sectionId ?? '',
+  sectionId: '',
   selected: [],
   markedForReview: false,
   timeSpent: 0,
@@ -97,7 +98,7 @@ export const useTestStore = create<TestState>((set, get) => ({
   setCurrentQuestion: (sectionId, index) =>
     set({ currentSectionId: sectionId, currentQuestionIndex: index }),
 
-  jumpToSection: (sectionId) => set({ currentSectionId: sectionId, currentQuestionIndex: 0 }),
+  jumpToSection: (sectionId) => set({ currentSectionId: sectionId }),
 
   nextQuestion: () => {
     const { config, currentSectionId, currentQuestionIndex } = get()
@@ -117,19 +118,9 @@ export const useTestStore = create<TestState>((set, get) => ({
   },
 
   prevQuestion: () => {
-    const { config, currentSectionId, currentQuestionIndex } = get()
-    if (!config) return
+    const { currentQuestionIndex } = get()
     if (currentQuestionIndex > 0) {
       set({ currentQuestionIndex: currentQuestionIndex - 1 })
-    } else {
-      const idx = config.sections.findIndex((s) => s.id === currentSectionId)
-      const prevSection = config.sections[idx - 1]
-      if (prevSection) {
-        set({
-          currentSectionId: prevSection.id,
-          currentQuestionIndex: Math.max(0, prevSection.questionIds.length - 1),
-        })
-      }
     }
   },
 
@@ -250,12 +241,18 @@ export const useTestStore = create<TestState>((set, get) => ({
     })
   },
 
+  tick: () => {
+    const { phase, timeRemaining } = get()
+    if (phase !== 'running') return
+    if (timeRemaining <= 0) {
+      set({ timeRemaining: 0 })
+      return
+    }
+    set({ timeRemaining: timeRemaining - 1 })
+  },
+
   saveAndNext: () => {
-    const { config, currentSectionId, currentQuestionIndex, markVisited, nextQuestion } = get()
-    if (!config) return
-    const section = config.sections.find((s) => s.id === currentSectionId)
-    const qid = section?.questionIds[currentQuestionIndex]
-    if (qid) markVisited(qid)
+    const { nextQuestion } = get()
     nextQuestion()
   },
 

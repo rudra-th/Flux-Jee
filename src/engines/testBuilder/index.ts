@@ -7,12 +7,6 @@ import { mulberry32 } from '@/utils/cn'
 import { getSubject } from '@/constants/syllabus'
 import type { Question } from '@/types/question'
 
-const sessionShuffledQuestions = new Map<string, Question>()
-
-export function getShuffledQuestion(id: string): Question | undefined {
-  return sessionShuffledQuestions.get(id)
-}
-
 export interface TestBuildOptions {
   name: string
   mode: TestConfig['mode']
@@ -142,11 +136,11 @@ export async function buildTest(opts: TestBuildOptions): Promise<TestConfig> {
     throw new Error('No questions matched the selected filters. Try widening your selection.')
   }
 
-  // Apply option shuffling and store shuffled variants in session map
+  // Apply option shuffling and persist shuffled variants into the question store
   if (opts.shuffleOptions) {
     for (const q of allQuestions) {
       const shuffled = shuffleOptions(q, rng)
-      sessionShuffledQuestions.set(shuffled.id, shuffled)
+      await persistShuffled(shuffled)
     }
   }
 
@@ -166,6 +160,14 @@ export async function buildTest(opts: TestBuildOptions): Promise<TestConfig> {
     warnings: [600, 300, 120, 60, 10],
     isAdaptive: opts.isAdaptive,
     createdAt: new Date().toISOString(),
+  }
+}
+
+/** Persist a shuffled question into the DB so the test session sees the shuffle */
+async function persistShuffled(q: Question): Promise<void> {
+  const existing = await (await import('@/db')).db.questions.get(q.id)
+  if (existing) {
+    await (await import('@/db')).db.questions.put(q)
   }
 }
 

@@ -172,6 +172,42 @@ function MagneticButton({
   )
 }
 
+const HERO_WORDS = ['real JEE.', 'NTA screen.', 'real exam.']
+
+function RotatingWords() {
+  const reduce = useReducedMotion()
+  const [i, setI] = useState(0)
+
+  useEffect(() => {
+    if (reduce) return
+    const t = window.setInterval(() => setI((x) => (x + 1) % HERO_WORDS.length), 2600)
+    return () => window.clearInterval(t)
+  }, [reduce])
+
+  const word = HERO_WORDS[i]!
+  const widest = HERO_WORDS.reduce((a, b) => (b.length > a.length ? b : a))
+
+  return (
+    <span aria-live="polite" className="relative inline-block whitespace-nowrap text-left">
+      <span className="invisible" aria-hidden>
+        {widest}
+      </span>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={word}
+          initial={reduce ? false : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduce ? undefined : { opacity: 0, y: -14 }}
+          transition={{ duration: 0.35, ease: EASE }}
+          className={cn(ACCENT, 'absolute inset-0')}
+        >
+          {word}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  )
+}
+
 function FloatingBadge({
   children,
   className,
@@ -477,6 +513,36 @@ function FlashcardMockup() {
       <p className="mt-1 text-xs text-text2">Torque = Moment of inertia × Angular acceleration</p>
       <div className="mx-auto mt-4 flex w-fit items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary">
         <Icon name="refresh" size={12} /> Tap to flip
+      </div>
+    </div>
+  )
+}
+
+function TutorChatMockup() {
+  return (
+    <div className="relative w-full rounded-2xl border border-border bg-surface p-5 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.55)]">
+      <div className="mb-4 flex items-center gap-2.5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary2">
+          <Icon name="brain" size={16} className="text-white" />
+        </div>
+        <div>
+          <p className="text-[12px] font-bold text-text">AI Tutor</p>
+          <p className="text-[10px] text-success">● online</p>
+        </div>
+      </div>
+      <div className="space-y-2.5">
+        <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-border bg-surface2 px-3.5 py-2.5 text-[12px] leading-relaxed text-text">
+          Why did I lose a mark here? I applied the right formula but still got it wrong.
+        </div>
+        <div className="ml-auto max-w-[90%] rounded-2xl rounded-tr-sm bg-primary/15 px-3.5 py-2.5 text-[12px] leading-relaxed text-text">
+          You used τ = Iα, but this rod isn&apos;t fixed — it rotates about its centre of mass.
+          That changes the moment of inertia to ML²/12, not ML²/3. Here&apos;s the corrected setup…
+        </div>
+        <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm border border-border bg-surface2 px-3.5 py-2.5 w-fit">
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-text3 [animation-delay:0ms]" />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-text3 [animation-delay:120ms]" />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-text3 [animation-delay:240ms]" />
+        </div>
       </div>
     </div>
   )
@@ -855,7 +921,7 @@ function HeroCopy() {
       >
         The closest thing
         <br />
-        to the <span className={ACCENT}>real JEE.</span>
+        to the <RotatingWords />
       </motion.h1>
       <motion.p
         initial={{ opacity: 0, y: 24 }}
@@ -1021,11 +1087,11 @@ function Hero() {
             <FloatingBadge className="right-[7%] bottom-[10%]" delay={1.5}>
               <div className="flex items-center gap-2.5 rounded-xl border border-border bg-surface/85 px-3.5 py-2.5 shadow-2xl backdrop-blur-md">
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                  <Icon name="flashcard" size={14} />
+                  <Icon name="brain" size={14} />
                 </span>
                 <div>
-                  <p className="text-[11px] font-bold text-text">Flashcards</p>
-                  <p className="text-[10px] text-success">● spaced repetition</p>
+                  <p className="text-[11px] font-bold text-text">AI Tutor</p>
+                  <p className="text-[10px] text-success">● online, on your mistakes</p>
                 </div>
               </div>
             </FloatingBadge>
@@ -1054,6 +1120,7 @@ const MARQUEE_ITEMS = [
   'Works fully offline',
   'Adaptive difficulty engine',
   'Free forever — no ads',
+  'AI Tutor',
   'Mistake notebook',
   'Speed tests & marathons',
 ]
@@ -1133,12 +1200,12 @@ const JOURNEY_STEPS: Array<{
         <span className="text-[#fbbf24]">what you missed.</span>
       </>
     ),
-    desc: 'Mistakes become flashcards. Weak chapters become tests. The platform helps you revise exactly what you missed — nothing else.',
+    desc: 'Mistakes become flashcards. Weak chapters become tests. The AI tutor explains the one step that tripped you — nothing else.',
     accent: '#fbbf24',
     bullets: [
       { icon: 'mistake', label: 'Mistake notebook, built automatically' },
       { icon: 'flashcard', label: 'Spaced repetition on your weak spots' },
-      { icon: 'refresh', label: 'Auto re-attempt of weak chapters' },
+      { icon: 'brain', label: 'AI tutor that reads your attempt' },
     ],
     visual: 'fix',
   },
@@ -1283,6 +1350,21 @@ function JourneyFixVisual() {
         </p>
         <div className="mx-auto mt-4 flex w-fit items-center gap-1.5 rounded-full bg-[#fbbf24]/10 px-3 py-1 text-[11px] font-semibold text-[#fbbf24]">
           <Icon name="refresh" size={12} /> Tap to flip
+        </div>
+      </div>
+      <div className="rounded-2xl border border-border bg-surface/80 p-4 shadow-2xl backdrop-blur">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#fbbf24] to-[#f59e0b]">
+            <Icon name="brain" size={16} className="text-white" />
+          </div>
+          <div>
+            <p className="text-[12px] font-bold text-text">AI Tutor</p>
+            <p className="text-[10px] text-success">● online</p>
+          </div>
+        </div>
+        <div className="mt-3 rounded-2xl rounded-tl-sm bg-[#fbbf24]/12 px-3.5 py-2.5 text-[12px] leading-relaxed text-text">
+          You forgot to omit pure liquids from Kc. Only gases and aqueous species count — that one
+          line is worth ~1 mark per test.
         </div>
       </div>
     </div>
@@ -1816,6 +1898,12 @@ const FEATURES: Array<{
     accent: '#8b5cf6',
   },
   {
+    icon: 'brain',
+    title: 'AI Tutor',
+    desc: 'Stuck on a solution? Get a step-by-step explanation tuned to the mistake you actually made — not a generic YouTube link to a different question.',
+    accent: '#f5a524',
+  },
+  {
     icon: 'flashcard',
     title: 'Flashcards that stick',
     desc: 'Formula and concept recall built around spaced repetition and your own weak chapters. Flip, rate yourself, and watch memory hold.',
@@ -1951,15 +2039,181 @@ function RevisionFeature() {
             </span>
           </>
           }
-          sub="Flashcards that adapt to what you forget, and detailed explanations that show exactly the step you missed — not the whole solution you already know."
+          sub="Flashcards that adapt to what you forget, and an AI tutor that explains exactly the step you missed — not the whole solution you already know."
         />
-        <div className="mt-14">
+        <div className="mt-14 grid gap-5 md:grid-cols-2">
           <Reveal delay={0.05}>
-            <motion.div style={{ y: cardY, rotate: cardRotate }} className="mx-auto max-w-md">
+            <motion.div style={{ y: cardY, rotate: cardRotate }}>
               <FlashcardMockup />
             </motion.div>
           </Reveal>
+          <Reveal delay={0.15}>
+            <motion.div style={{ y: cardY, rotate: cardRotate }}>
+              <TutorChatMockup />
+            </motion.div>
+          </Reveal>
         </div>
+      </div>
+    </section>
+  )
+}
+
+/* ------------------------------ AI TUTOR FEATURE --------------------------- */
+
+const TUTOR_ROUNDS: Array<Array<{ from: 'user' | 'ai'; text: string }>> = [
+  [
+    {
+      from: 'user',
+      text: 'Why did I lose a mark on Q23? I used Kc = [P] / [R].',
+    },
+    {
+      from: 'ai',
+      text: 'Because H₂O is a liquid — it never enters Kc. Kc = [CO₂][H₂] / [CO] = (0.4 × 0.5) / (0.1 × 0.2) = 10. You forgot to omit pure liquids and solids.',
+    },
+  ],
+  [
+    { from: 'user', text: 'What should I revise tonight?' },
+    {
+      from: 'ai',
+      text: 'From today\'s test: Equilibrium 38%, Electrochemistry 44% — plus 2 questions marked for review in Maths. I built you a 20-question focused set.',
+    },
+  ],
+  [
+    { from: 'user', text: 'Why do I keep losing marks in the last 10 questions?' },
+    {
+      from: 'ai',
+      text: '62% of your errors are sign mistakes (Mistake Notebook), and you slow down after Q60 — avg 142s vs 90s target. I added a 12-question speed drill for tomorrow.',
+    },
+  ],
+]
+
+function AnimatedTutorMockup() {
+  const reduce = useReducedMotion()
+  const [round, setRound] = useState(0)
+  const [typing, setTyping] = useState(true)
+  const messages = TUTOR_ROUNDS[round]!
+
+  useEffect(() => {
+    if (reduce) return
+    setTyping(true)
+    const t1 = window.setTimeout(() => setTyping(false), 900)
+    const t2 = window.setTimeout(() => setRound((r) => (r + 1) % TUTOR_ROUNDS.length), 6800)
+    return () => {
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+    }
+  }, [round, reduce])
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_30px_90px_-20px_rgba(0,0,0,0.55)]">
+      <div className="flex items-center gap-2.5 border-b border-border bg-surface2/70 px-4 py-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary2">
+          <Icon name="brain" size={16} className="text-white" />
+        </div>
+        <div>
+          <p className="text-[12px] font-bold text-text">AI Tutor</p>
+          <p className="flex items-center gap-1 text-[10px] text-success">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" /> online · trained
+            on your attempts
+          </p>
+        </div>
+        <span className="ml-auto flex items-center gap-1.5 text-[10px] font-semibold text-text3">
+          <Icon name="sparkles" size={12} /> Mistake-aware
+        </span>
+      </div>
+
+      <div className="flex min-h-[210px] flex-col gap-2.5 p-4">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={round}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3, ease: EASE }}
+            className="flex flex-col gap-2.5"
+          >
+            {messages.map((m, i) =>
+              m.from === 'user' ? (
+                <div
+                  key={i}
+                  className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm border border-border bg-surface2 px-3.5 py-2.5 text-[12px] leading-relaxed text-text"
+                >
+                  {m.text}
+                </div>
+              ) : (
+                <div
+                  key={i}
+                  className="max-w-[92%] rounded-2xl rounded-tl-sm bg-primary/12 px-3.5 py-2.5 text-[12px] leading-relaxed text-text"
+                >
+                  {m.text}
+                </div>
+              ),
+            )}
+          </motion.div>
+        </AnimatePresence>
+        {typing ? (
+          <div className="flex items-center gap-1 w-fit rounded-2xl rounded-tl-sm border border-border bg-surface2 px-3.5 py-2.5">
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-text3 [animation-delay:0ms]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-text3 [animation-delay:120ms]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-text3 [animation-delay:240ms]" />
+          </div>
+        ) : null}
+      </div>
+
+      <div className="flex items-center gap-2 border-t border-border bg-surface2/50 px-4 py-3">
+        <div className="flex-1 rounded-full border border-border bg-surface px-4 py-2 text-[12px] text-text3">
+          Ask a doubt from your last test…
+        </div>
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30">
+          <Icon name="arrow-up-right" size={15} />
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function AiTutorFeature() {
+  return (
+    <section id="ai" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-24 sm:py-32">
+      <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <div>
+          <SectionHeading
+            center={false}
+            eyebrow="AI Tutor"
+            title={
+              <>
+                Stuck on a question?
+                <br />
+                <span className={ACCENT}>
+                  Ask your mistake.
+                </span>
+              </>
+            }
+            sub="The AI tutor reads your actual attempt — the option you picked, the time you took, the formula you used — and explains exactly the step that cost you the mark."
+          />
+          <Reveal delay={0.15}>
+            <div className="mt-8 space-y-3">
+              {[
+                'Explains the mistake you actually made — not the whole solution',
+                'Runs offline: your doubts never leave your device',
+                'Instantly converts weak points into a revision set',
+                'Solves a related question to confirm you got it',
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
+                    <Icon name="check" size={12} />
+                  </span>
+                  <span className="text-sm font-medium text-text">{item}</span>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+        <Reveal delay={0.1}>
+          <TiltCard intensity={4}>
+            <AnimatedTutorMockup />
+          </TiltCard>
+        </Reveal>
       </div>
     </section>
   )
@@ -1972,6 +2226,7 @@ const COMPARE_ROWS: Array<{ label: string; us: string; them: string }> = [
   { label: 'NTA-exact interface', us: 'Pixel-faithful replica', them: 'Rough approximations' },
   { label: 'Works offline', us: '100% — no internet needed', them: 'Requires connection' },
   { label: 'Adaptive difficulty', us: 'Real-time, per chapter', them: 'Fixed random sets' },
+  { label: 'AI Tutor', us: 'Trained on your mistakes', them: 'Static solutions' },
   { label: 'Price', us: '₹0 · free forever · no ads', them: '₹3,000 – ₹50,000 / yr' },
 ]
 
@@ -2130,7 +2385,7 @@ function Testimonials() {
 const FAQ_ITEMS: Array<{ q: string; a: string }> = [
   {
     q: 'Is JEE Arena really free?',
-    a: 'Yes. Every mode, every question, every feature — including analytics — is completely free with no ads and no premium wall. There is no paid tier, and there never will be one.',
+    a: 'Yes. Every mode, every question, every feature — including the AI Tutor and analytics — is completely free with no ads and no premium wall. There is no paid tier, and there never will be one.',
   },
   {
     q: 'Does it need internet?',
@@ -2271,6 +2526,7 @@ const FOOTER_LINKS: Array<{
     links: [
       { label: 'Question Bank', path: '/question-bank' },
       { label: 'Flashcards', path: '/flashcards' },
+      { label: 'AI Tutor', path: '/tutor' },
       { label: 'Mistake Notebook', path: '/mistakes' },
     ],
   },
@@ -2462,6 +2718,7 @@ export default function LandingPage() {
         <FeaturesGrid />
         <AnalyticsFeature />
         <RevisionFeature />
+        <AiTutorFeature />
         <Compare />
         <BigNumbers />
         <Testimonials />
