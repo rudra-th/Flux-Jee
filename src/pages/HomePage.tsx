@@ -6,7 +6,6 @@ import { useDailyChallenge } from '@/api/questionApi'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { formatDuration, relativeTime, todayKey } from '@/utils/time'
 import { db } from '@/db'
-import { TEST_MODES } from '@/constants/modes'
 import { cn } from '@/utils/cn'
 import { motion } from 'framer-motion'
 
@@ -20,6 +19,40 @@ const QUOTES = [
   { text: 'Discipline is the bridge between goals and accomplishment.', author: 'Jim Rohn' },
 ]
 
+interface ModeCard {
+  icon: IconName
+  title: string
+  subtitle: string
+  path: string
+  color: string
+  badge?: string
+}
+
+const EXAM_SIMULATION: ModeCard[] = [
+  { icon: 'full', title: 'Full Test', subtitle: 'Complete JEE Main mock, NTA interface', path: '/test/full', color: '#4f8cff', badge: 'NTA Replica' },
+  { icon: 'pyq', title: 'PYQ Papers', subtitle: 'Real past papers, 2019-2024', path: '/practice/pyq', color: '#3b82f6', badge: 'Real Papers' },
+]
+
+const CUSTOM_PRACTICE: ModeCard[] = [
+  { icon: 'custom', title: 'Custom Test', subtitle: 'Build your perfect test step by step', path: '/test/custom', color: '#38bdf8' },
+]
+
+const FOCUSED_PRACTICE: ModeCard[] = [
+  { icon: 'daily', title: 'Daily Challenge', subtitle: 'Same 10 questions for everyone today', path: '/practice/daily', color: '#ef4444', badge: 'Daily' },
+  { icon: 'weak', title: 'Weak Chapters', subtitle: 'Auto-target your weakest topics', path: '/practice/weak', color: '#f43f5e' },
+  { icon: 'revision', title: 'Revision', subtitle: 'Re-attempt questions you have solved', path: '/practice/revision', color: '#14b8a6' },
+]
+
+const CHALLENGE_MODES: ModeCard[] = [
+  { icon: 'marathon', title: 'Marathon', subtitle: '60 questions, 2 hours, endurance test', path: '/practice/marathon', color: '#dc2626' },
+  { icon: 'speed', title: 'Speed Test', subtitle: '20 questions in 10 minutes, no pause', path: '/practice/speed', color: '#eab308' },
+]
+
+const REVIEW: ModeCard[] = [
+  { icon: 'mistake', title: 'Mistake Notebook', subtitle: 'Review your errors', path: '/mistakes', color: '#ef4444' },
+  { icon: 'bookmark', title: 'Bookmarks', subtitle: 'Practice saved questions', path: '/practice/bookmarked', color: '#f59e0b' },
+]
+
 export default function HomePage() {
   const navigate = useNavigate()
   const { settings } = useSettingsStore()
@@ -30,13 +63,6 @@ export default function HomePage() {
 
   const quote = QUOTES[new Date().getDate() % QUOTES.length] ?? QUOTES[0]!
   const stats = analytics?.stats
-
-  const navigationCards: Array<{ icon: IconName; title: string; subtitle: string; path: string; color: string }> = [
-    { icon: 'test', title: 'Take a Full Test', subtitle: 'NTA replica interface', path: '/test/full', color: '#4f8cff' },
-    { icon: 'pyq', title: 'Previous Year Papers', subtitle: 'Real past papers', path: '/practice/pyq', color: '#38bdf8' },
-    { icon: 'flashcard', title: 'Flashcards', subtitle: 'Formula & concept recall', path: '/flashcards', color: '#b06bf5' },
-    { icon: 'mistake', title: 'Mistake Notebook', subtitle: 'Review your errors', path: '/mistakes', color: '#ef4444' },
-  ]
 
   return (
     <div className="space-y-6">
@@ -78,8 +104,8 @@ export default function HomePage() {
               <Button variant="outline" onClick={() => navigate('/practice/daily')}>
                 <Icon name="daily" size={16} /> Daily Challenge
               </Button>
-              <Button variant="ghost" onClick={() => navigate('/practice/adaptive')}>
-                <Icon name="adaptive" size={16} /> Adaptive Mode
+              <Button variant="ghost" onClick={() => navigate('/test/custom')}>
+                <Icon name="custom" size={16} /> Custom Test
               </Button>
             </div>
           </div>
@@ -134,9 +160,8 @@ export default function HomePage() {
         </Card>
       )}
 
-      {/* RECENT TESTS + WEAK CHAPTERS + MISTAKES */}
+      {/* RECENT + WEAK + MISTAKES */}
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* Recent tests */}
         <Card>
           <CardHeader
             title="Recent Tests"
@@ -152,7 +177,7 @@ export default function HomePage() {
                     className="block rounded-lg border border-border bg-surface2 p-3 transition-colors hover:border-primary/40"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-medium text-text">{r.configId.includes('result') ? 'Test' : 'Test'} · {relativeTime(r.submittedAt)}</span>
+                      <span className="truncate text-sm font-medium text-text">Test · {relativeTime(r.submittedAt)}</span>
                       <span className={cn('font-mono text-sm font-bold', r.totalMarks >= 0 ? 'text-success' : 'text-danger')}>
                         {r.totalMarks > 0 ? `+${r.totalMarks}` : r.totalMarks}
                       </span>
@@ -175,7 +200,6 @@ export default function HomePage() {
           </div>
         </Card>
 
-        {/* Weak chapters */}
         <Card>
           <CardHeader
             title="Weak Chapters"
@@ -192,7 +216,7 @@ export default function HomePage() {
                     className="block w-full text-left"
                   >
                     <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="font-medium text-text">{c.chapter}</span>
+                      <span className="font-display font-semibold text-text">{c.chapter}</span>
                       <span className={cn('font-mono font-bold', c.accuracy < 50 ? 'text-danger' : 'text-warning')}>
                         {c.accuracy}%
                       </span>
@@ -211,7 +235,6 @@ export default function HomePage() {
           </div>
         </Card>
 
-        {/* Recent mistakes + daily challenge */}
         <Card>
           <CardHeader title="Recent Mistakes" action={<Link to="/mistakes" className="text-xs font-medium text-primary hover:underline">Notebook</Link>} />
           <div className="px-5 pb-4">
@@ -220,70 +243,67 @@ export default function HomePage() {
         </Card>
       </div>
 
-      {/* DAILY CHALLENGE + NAV CARDS */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="p-5 lg:col-span-1">
-          <div className="mb-2 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-text">Daily Challenge</h3>
-              <p className="text-xs text-text2">10 questions · {todayKey()}</p>
-            </div>
-            <Badge tone="danger" icon="flame">Today</Badge>
+      {/* DAILY CHALLENGE PROMPT */}
+      <Card className="p-5">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-danger/10">
+            <Icon name="daily" size={24} className="text-danger" />
           </div>
-          <p className="mb-3 text-sm text-text2">
-            A fresh set of 10 questions to test your fundamentals. Beat your best score!
-          </p>
-          <Button variant="success" onClick={() => navigate('/practice/daily')} className="w-full">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-display text-sm font-bold text-text">Daily Challenge · {todayKey()}</h3>
+            <p className="text-xs text-text2">10 questions, same for everyone. Beat the crowd!</p>
+          </div>
+          {dailyQuestions && dailyQuestions.length > 0 && (
+            <Badge tone="info">{dailyQuestions.length} questions ready</Badge>
+          )}
+          <Button variant="success" onClick={() => navigate('/practice/daily')}>
             <Icon name="daily" size={16} /> Attempt Challenge
           </Button>
-          {dailyQuestions && dailyQuestions.length > 0 && (
-            <div className="mt-4 flex items-center justify-between rounded-lg border border-border bg-surface2 px-3 py-2 text-xs text-text2">
-              <span>Questions ready</span>
-              <span className="font-mono text-primary">{dailyQuestions.length}</span>
-            </div>
-          )}
-        </Card>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:col-span-2">
-          {navigationCards.map((c) => (
-            <button
-              key={c.title}
-              onClick={() => navigate(c.path)}
-              className="group rounded-xl border border-border bg-surface p-4 text-left transition-all duration-200 hover:border-primary/40 hover:shadow-md"
-            >
-              <div
-                className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg"
-                style={{ backgroundColor: `${c.color}1a`, color: c.color }}
-              >
-                <Icon name={c.icon} size={20} />
-              </div>
-              <p className="text-sm font-semibold text-text">{c.title}</p>
-              <p className="mt-0.5 text-xs text-text2">{c.subtitle}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ALL MODES */}
-      <Card>
-        <CardHeader title="Explore All Practice Modes" subtitle="Choose how you want to practice today" />
-        <div className="grid grid-cols-2 gap-2.5 px-5 pb-5 sm:grid-cols-3 lg:grid-cols-5">
-          {TEST_MODES.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => navigate(m.path)}
-              className="group flex flex-col items-start gap-2 rounded-lg border border-border bg-surface2 p-3 text-left transition-all duration-150 hover:border-primary/40 hover:bg-surface3"
-            >
-              <Icon name={m.icon as IconName} size={18} style={{ color: m.color }} />
-              <div>
-                <p className="text-xs font-semibold text-text">{m.name}</p>
-                <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-text3">{m.description}</p>
-              </div>
-            </button>
-          ))}
         </div>
       </Card>
+
+      {/* MODE SECTIONS */}
+      <ModeSection title="Exam Simulation" subtitle="Full-length tests that replicate the real exam" cards={EXAM_SIMULATION} onNavigate={navigate} />
+      <ModeSection title="Custom Practice" subtitle="Build exactly the test you need" cards={CUSTOM_PRACTICE} onNavigate={navigate} />
+      <ModeSection title="Focused Practice" subtitle="Target specific areas that need work" cards={FOCUSED_PRACTICE} onNavigate={navigate} />
+      <ModeSection title="Challenge Modes" subtitle="Push your limits with timed challenges" cards={CHALLENGE_MODES} onNavigate={navigate} />
+      <ModeSection title="Review" subtitle="Revisit mistakes and saved questions" cards={REVIEW} onNavigate={navigate} />
     </div>
+  )
+}
+
+function ModeSection({ title, subtitle, cards, onNavigate }: { title: string; subtitle: string; cards: ModeCard[]; onNavigate: (path: string) => void }) {
+  return (
+    <Card>
+      <CardHeader title={title} subtitle={subtitle} />
+      <div className="grid gap-3 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map((c) => (
+          <button
+            key={c.title}
+            onClick={() => onNavigate(c.path)}
+            className="group flex items-start gap-4 rounded-xl border border-border bg-surface2 p-4 text-left transition-all duration-200 hover:border-primary/40 hover:bg-surface3 hover:shadow-md"
+          >
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"
+              style={{ backgroundColor: `${c.color}15`, color: c.color }}
+            >
+              <Icon name={c.icon} size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p className="font-display text-sm font-bold text-text">{c.title}</p>
+                {c.badge && (
+                  <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-accent">
+                    {c.badge}
+                  </span>
+                )}
+              </div>
+              <p className="mt-0.5 text-xs leading-relaxed text-text2">{c.subtitle}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+    </Card>
   )
 }
 

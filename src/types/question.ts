@@ -121,5 +121,6 @@ export interface QuestionFilters {
   onlyUnattempted?: boolean
   onlyBookmarked?: boolean
   onlyGuessed?: boolean
+  onlyPreviouslyAttempted?: boolean
   search?: string
 }

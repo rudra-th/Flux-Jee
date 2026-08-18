@@ -32,6 +32,7 @@ export async function selectQuestions(opts: SelectionOptions): Promise<Question[
     onlyUnattempted,
     onlyBookmarked,
     onlyGuessed,
+    onlyPreviouslyAttempted,
     concept,
   } = opts
 
@@ -63,7 +64,7 @@ export async function selectQuestions(opts: SelectionOptions): Promise<Question[
     )
   }
 
-  if (onlyWrong || onlyUnattempted || onlyGuessed || onlyBookmarked) {
+  if (onlyWrong || onlyUnattempted || onlyGuessed || onlyBookmarked || onlyPreviouslyAttempted) {
     const answerRecords = await db.answerRecords.toArray()
     const bookmarks = await db.bookmarks.toArray()
     const bookmarkedIds = new Set(bookmarks.map((b) => b.questionId))
@@ -86,6 +87,10 @@ export async function selectQuestions(opts: SelectionOptions): Promise<Question[
     }
     if (onlyBookmarked) {
       rows = rows.filter((q) => bookmarkedIds.has(q.id))
+    }
+    if (onlyPreviouslyAttempted) {
+      const attemptedIds = new Set(answerRecords.map((r) => r.questionId))
+      rows = rows.filter((q) => attemptedIds.has(q.id))
     }
   }
 

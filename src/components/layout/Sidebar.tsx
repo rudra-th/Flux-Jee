@@ -27,15 +27,21 @@ const GROUPS: NavGroup[] = [
   {
     title: 'Practice',
     items: [
+      { label: 'Custom Test', path: '/test/custom', icon: 'custom' },
       { label: 'Full Test', path: '/test/full', icon: 'full' },
-      { label: 'Test Builder', path: '/test/custom', icon: 'custom' },
-      { label: 'Chapter Tests', path: '/test/chapter', icon: 'chapter' },
       { label: 'PYQ Papers', path: '/practice/pyq', icon: 'pyq' },
-      { label: 'Mixed Practice', path: '/practice/mixed', icon: 'mixed' },
-      { label: 'Daily Challenge', path: '/practice/daily', icon: 'daily', badge: 'New' },
-      { label: 'Adaptive Mode', path: '/practice/adaptive', icon: 'adaptive' },
-      { label: 'Speed Test', path: '/practice/speed', icon: 'speed' },
+      { label: 'Daily Challenge', path: '/practice/daily', icon: 'daily', badge: 'Daily' },
+      { label: 'Weak Chapters', path: '/practice/weak', icon: 'weak' },
+      { label: 'Revision', path: '/practice/revision', icon: 'revision' },
       { label: 'Marathon', path: '/practice/marathon', icon: 'marathon' },
+      { label: 'Speed Test', path: '/practice/speed', icon: 'speed' },
+    ],
+  },
+  {
+    title: 'Review',
+    items: [
+      { label: 'Mistake Notebook', path: '/mistakes', icon: 'mistake' },
+      { label: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' },
     ],
   },
   {
@@ -45,8 +51,6 @@ const GROUPS: NavGroup[] = [
       { label: 'Flashcards', path: '/flashcards', icon: 'flashcard' },
       { label: 'AI Tutor', path: '/tutor', icon: 'brain', badge: 'New' },
       { label: 'Formula Revision', path: '/formulas', icon: 'formula' },
-      { label: 'Mistake Notebook', path: '/mistakes', icon: 'mistake' },
-      { label: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' },
     ],
   },
   {

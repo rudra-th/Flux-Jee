@@ -75,6 +75,7 @@ export async function computeAdaptiveProfile(): Promise<AdaptiveProfile> {
 
 /**
  * Generate an adaptive test from the weakest chapters.
+ * Used by the weak-chapter mode to target areas that need improvement.
  */
 export async function buildAdaptiveTest(questionCount = 20): Promise<TestConfig> {
   const profile = await computeAdaptiveProfile()
@@ -82,8 +83,8 @@ export async function buildAdaptiveTest(questionCount = 20): Promise<TestConfig>
 
   if (!weakIds.length) {
     return buildTest({
-      name: 'Adaptive Test',
-      mode: 'adaptive',
+      name: 'Weak Chapter Test',
+      mode: 'weak-chapter',
       exam: 'practice',
       subjects: ['physics', 'chemistry', 'mathematics'],
       difficulties: [profile.suggestedDifficulty],
@@ -94,14 +95,13 @@ export async function buildAdaptiveTest(questionCount = 20): Promise<TestConfig>
       shuffleOptions: true,
       allowPause: true,
       autoSubmit: true,
-      isAdaptive: true,
       seed: Date.now(),
     })
   }
 
   return buildTest({
-    name: 'Adaptive Test',
-    mode: 'adaptive',
+    name: 'Weak Chapter Test',
+    mode: 'weak-chapter',
     exam: 'practice',
     subjects: ['physics', 'chemistry', 'mathematics'],
     chapters: weakIds,
@@ -113,7 +113,6 @@ export async function buildAdaptiveTest(questionCount = 20): Promise<TestConfig>
     shuffleOptions: true,
     allowPause: true,
     autoSubmit: true,
-    isAdaptive: true,
     seed: Date.now(),
   })
 }

@@ -3,8 +3,7 @@ import TestBuilder from '@/pages/TestBuilder'
 
 /**
  * Routes /practice/:mode to the right page for that mode.
- * Test-centric modes (mixed, daily, pyq, marathon, speed, revision, adaptive,
- * weak) render the TestBuilder; notebook modes redirect to their pages.
+ * Notebook modes redirect to their pages; everything else renders TestBuilder.
  */
 export default function PracticeModeRoute() {
   const { mode } = useParams()

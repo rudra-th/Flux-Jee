@@ -929,8 +929,8 @@ function HeroCopy() {
         transition={{ duration: 0.9, delay: 0.22, ease: EASE }}
         className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-text2 sm:text-lg"
       >
-        Every real PYQ since 2014. The exact NTA interface. An adaptive engine that learns your
-        weak points. Analytics that tell you what to fix. All of it — free, offline, forever.
+        Every real PYQ since 2014. The exact NTA interface. Smart weak-chapter targeting that
+        learns your weak points. Analytics that tell you what to fix. All of it — free, offline, forever.
       </motion.p>
       <motion.div
         initial={{ opacity: 0, y: 18 }}
@@ -1118,7 +1118,7 @@ const MARQUEE_ITEMS = [
   'NTA-replica interface',
   'Real PYQs since 2014',
   'Works fully offline',
-  'Adaptive difficulty engine',
+  'Weak chapter targeting',
   'Free forever — no ads',
   'AI Tutor',
   'Mistake notebook',
@@ -1892,10 +1892,10 @@ const FEATURES: Array<{
     accent: '#38bdf8',
   },
   {
-    icon: 'adaptive',
-    title: 'Adaptive engine',
-    desc: 'Every answer you give is scored in real time. The engine re-targets the exact chapters and difficulty you need next — no more random practice sets.',
-    accent: '#8b5cf6',
+    icon: 'weak',
+    title: 'Weak chapter targeting',
+    desc: 'The engine analyzes your past performance and automatically generates tests targeting your weakest chapters — no more guessing what to study next.',
+    accent: '#f43f5e',
   },
   {
     icon: 'brain',
@@ -2225,7 +2225,7 @@ const COMPARE_ROWS: Array<{ label: string; us: string; them: string }> = [
   { label: 'Real PYQs since 2014', us: 'Every paper, every shift', them: 'A few sample sets' },
   { label: 'NTA-exact interface', us: 'Pixel-faithful replica', them: 'Rough approximations' },
   { label: 'Works offline', us: '100% — no internet needed', them: 'Requires connection' },
-  { label: 'Adaptive difficulty', us: 'Real-time, per chapter', them: 'Fixed random sets' },
+  { label: 'Weak chapter targeting', us: 'Auto-analyzes your weak areas', them: 'Fixed random sets' },
   { label: 'AI Tutor', us: 'Trained on your mistakes', them: 'Static solutions' },
   { label: 'Price', us: '₹0 · free forever · no ads', them: '₹3,000 – ₹50,000 / yr' },
 ]

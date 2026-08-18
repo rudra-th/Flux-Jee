@@ -30,6 +30,7 @@ export interface TestBuildOptions {
   onlyWrong?: boolean
   onlyBookmarked?: boolean
   onlyUnattempted?: boolean
+  onlyPreviouslyAttempted?: boolean
   isAdaptive?: boolean
   seed?: number
 }
@@ -66,6 +67,7 @@ export async function buildTest(opts: TestBuildOptions): Promise<TestConfig> {
       onlyWrong: opts.onlyWrong,
       onlyUnattempted: opts.onlyUnattempted,
       onlyBookmarked: opts.onlyBookmarked,
+      onlyPreviouslyAttempted: opts.onlyPreviouslyAttempted,
       year: undefined,
     })
 
