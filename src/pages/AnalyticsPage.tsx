@@ -316,108 +316,26 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      {/* Speed + guesses + difficulty */}
-      <div className="mb-4 grid gap-4 lg:grid-cols-3">
+      {/* Speed + guesses */}
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader title="Speed Profile" subtitle="Time efficiency" />
-          <div className="grid grid-cols-2 gap-3 px-5 pb-5 text-center">
+          <div className="grid grid-cols-3 gap-3 px-5 pb-5 text-center">
             <MetricBox label="Avg / question" value={`${bundle.speed.avgSecondsPerQuestion}s`} />
             <MetricBox label="Avg / correct" value={`${bundle.speed.avgSecondsPerCorrectQuestion}s`} />
             <MetricBox label="Efficiency" value={`${bundle.speed.efficiency}%`} sub={`p${bundle.speed.percentile}`} />
-            <MetricBox label="Time invested" value={formatDuration(s.totalTimeSpent)} />
-          </div>
-        </Card>
-        <Card>
-          <CardHeader title="Difficulty Breakdown" subtitle="Accuracy by difficulty" />
-          <div className="space-y-2.5 px-5 pb-5">
-            {bundle.difficulty.filter((d) => d.attempted > 0).map((d) => (
-              <div key={d.difficulty} className="flex items-center gap-3 text-xs">
-                <span className="w-16 text-text2">Level {d.difficulty}</span>
-                <div className="flex-1">
-                  <div className="h-2 overflow-hidden rounded-full bg-surface3">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${d.accuracy}%`,
-                        backgroundColor: d.accuracy >= 70 ? '#10b981' : d.accuracy >= 40 ? '#6366f1' : '#ef4444',
-                      }}
-                    />
-                  </div>
-                </div>
-                <span className="w-20 text-right font-mono text-text">{d.accuracy}%</span>
-                <span className="w-12 text-right text-text3">{d.attempted}Q</span>
-              </div>
-            ))}
-            {bundle.difficulty.filter((d) => d.attempted > 0).length === 0 && (
-              <p className="py-4 text-center text-text3">No data yet.</p>
-            )}
           </div>
         </Card>
         <Card>
           <CardHeader title="Guess Analysis" subtitle="Smart guessing vs random" />
-          <div className="grid grid-cols-2 gap-3 px-5 pb-5 text-center">
-            <MetricBox label="Total guesses" value={String(bundle.guesses.totalGuesses)} />
+          <div className="grid grid-cols-4 gap-3 px-5 pb-5 text-center">
+            <MetricBox label="Total" value={String(bundle.guesses.totalGuesses)} />
             <MetricBox label="Correct" value={String(bundle.guesses.correctGuesses)} />
             <MetricBox label="Wrong" value={String(bundle.guesses.wrongGuesses)} />
             <MetricBox label="Accuracy" value={`${bundle.guesses.guessAccuracy}%`} sub={`Random ~${bundle.guesses.expectedRandom}%`} />
           </div>
         </Card>
       </div>
-
-      {/* Improvement trend */}
-      {recent.length >= 3 && (
-        <Card className="mb-4">
-          <CardHeader title="Improvement Trend" subtitle="Marks scored in recent tests" />
-          <div className="h-48 px-4 pb-4">
-            <Line
-              data={{
-                labels: recent.slice(0, 8).reverse().map((r, i) => `Test ${i + 1}`),
-                datasets: [{
-                  label: 'Marks %',
-                  data: recent.slice(0, 8).reverse().map((r) => r.maxMarks ? Math.round((r.totalMarks / r.maxMarks) * 100) : 0),
-                  borderColor: chartColors.primary,
-                  backgroundColor: 'rgba(99,102,241,0.12)',
-                  tension: 0.35,
-                  fill: true,
-                  pointRadius: 4,
-                  pointBackgroundColor: chartColors.primary,
-                }],
-              }}
-              options={{
-                ...lineOptions,
-                plugins: { legend: { display: false } },
-                scales: {
-                  ...lineOptions.scales,
-                  y: { ...lineOptions.scales?.y, min: 0, max: 100, ticks: { ...lineOptions.scales?.y?.ticks, callback: (v) => `${v}%` } },
-                },
-              }}
-            />
-          </div>
-        </Card>
-      )}
-
-      {/* Subject-wise detail */}
-      <Card className="mb-4">
-        <CardHeader title="Subject Performance" subtitle="Detailed per-subject breakdown" />
-        <div className="grid gap-4 px-5 pb-5 sm:grid-cols-3">
-          {bundle.subjects.map((sub) => (
-            <div key={sub.subject} className="rounded-xl border border-border bg-surface2 p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: subjectColor(sub.subject) }} />
-                <span className="text-sm font-semibold text-text capitalize">{sub.subject}</span>
-              </div>
-              <div className="space-y-1.5 text-xs text-text2">
-                <div className="flex justify-between"><span>Attempted</span><span className="font-mono text-text">{sub.attempted}</span></div>
-                <div className="flex justify-between"><span>Correct</span><span className="font-mono text-success">{sub.correct}</span></div>
-                <div className="flex justify-between"><span>Wrong</span><span className="font-mono text-danger">{sub.wrong}</span></div>
-                <div className="flex justify-between"><span>Accuracy</span><span className="font-mono font-semibold text-text">{sub.accuracy}%</span></div>
-                <div className="flex justify-between"><span>Avg time</span><span className="font-mono text-text">{sub.avgTime}s</span></div>
-                <div className="flex justify-between"><span>Marks</span><span className="font-mono text-text">{sub.marks}/{sub.maxMarks}</span></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
     </div>
   )
 }

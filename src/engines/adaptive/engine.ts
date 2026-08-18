@@ -88,7 +88,7 @@ export async function buildAdaptiveTest(questionCount = 20): Promise<TestConfig>
   if (!weakIds.length) {
     return buildTest({
       name: 'Adaptive Test',
-      mode: 'custom',
+      mode: 'adaptive',
       exam: 'practice',
       subjects: ['physics', 'chemistry', 'mathematics'],
       difficulties: [profile.suggestedDifficulty],
@@ -106,7 +106,7 @@ export async function buildAdaptiveTest(questionCount = 20): Promise<TestConfig>
 
   return buildTest({
     name: 'Adaptive Test',
-    mode: 'custom',
+    mode: 'adaptive',
     exam: 'practice',
     subjects: ['physics', 'chemistry', 'mathematics'],
     chapters: weakIds,

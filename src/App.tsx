@@ -20,10 +20,6 @@ import SearchPage from '@/pages/SearchPage'
 import SettingsPage from '@/pages/SettingsPage'
 import LeaderboardPage from '@/pages/LeaderboardPage'
 import NotFoundPage from '@/pages/NotFoundPage'
-import OnboardingWizard from '@/components/onboarding/OnboardingWizard'
-import MockTestSeries from '@/pages/MockTestSeries'
-import MockTestDetail from '@/pages/MockTestDetail'
-import PyqPaperList from '@/pages/PyqPaperList'
 import { warmSearchIndex } from '@/engines/search/engine'
 
 const queryClient = new QueryClient({
@@ -34,12 +30,6 @@ const queryClient = new QueryClient({
     },
   },
 })
-
-function DashboardRoute() {
-  const onboarded = useSettingsStore((s) => s.settings.onboarded)
-  if (!onboarded) return <OnboardingWizard />
-  return <AppShell><HomePage /></AppShell>
-}
 
 export default function App() {
   const settings = useSettingsStore((s) => s.settings)
@@ -58,17 +48,11 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/onboarding" element={<OnboardingWizard />} />
-            <Route path="/dashboard" element={<DashboardRoute />} />
-            <Route path="/mock-tests" element={<AppShell><MockTestSeries /></AppShell>} />
-            <Route path="/mock-tests/:series" element={<AppShell><MockTestSeries /></AppShell>} />
-            <Route path="/mock-tests/:series/:testId" element={<AppShell><MockTestDetail /></AppShell>} />
+            <Route path="/dashboard" element={<AppShell><HomePage /></AppShell>} />
             <Route path="/test" element={<AppShell><TestBuilder /></AppShell>} />
             <Route path="/test/:mode" element={<AppShell><TestBuilder /></AppShell>} />
             <Route path="/practice" element={<AppShell><PracticePage /></AppShell>} />
             <Route path="/practice/:mode" element={<AppShell><PracticeModeRoute /></AppShell>} />
-            <Route path="/pyq" element={<AppShell><PyqPaperList /></AppShell>} />
-            <Route path="/pyq/:exam" element={<AppShell><PyqPaperList /></AppShell>} />
             <Route path="/search" element={<AppShell><SearchPage /></AppShell>} />
             <Route path="/question-bank" element={<AppShell><SearchPage /></AppShell>} />
             <Route path="/leaderboard" element={<AppShell><LeaderboardPage /></AppShell>} />

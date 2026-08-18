@@ -21,7 +21,6 @@ export const Latex = memo(function Latex({
         displayMode: display,
         throwOnError: false,
         strict: false,
-        trust: false,
       })
     } catch {
       return null
