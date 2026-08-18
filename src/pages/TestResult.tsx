@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Card, CardHeader, Button, Badge, Icon, EmptyState, ProgressBar, CircularProgress, Tabs, RichText, type IconName } from '@/components/ui'
+import { Card, CardHeader, Button, Badge, Icon, EmptyState, ProgressBar, CircularProgress, Tabs, RichText, Latex, type IconName } from '@/components/ui'
 import { getResultById } from '@/engines/analytics/engine'
 import { getQuestionsByIds } from '@/engines/questionEngine/selector'
 import { QuestionViewer } from '@/components/question/QuestionViewer'
@@ -206,6 +206,63 @@ export default function TestResult() {
             </div>
           </Card>
 
+          {/* Concept Gaps */}
+          <Card>
+            <CardHeader title="Concept Gaps" subtitle="Chapters where you lost the most marks" />
+            <div className="px-5 pb-5">
+              {(() => {
+                const chapterMap = new Map<string, { correct: number; wrong: number; total: number; subject: string }>()
+                for (const p of result.performance) {
+                  if (!p.visited) continue
+                  const key = p.chapter
+                  const entry = chapterMap.get(key) ?? { correct: 0, wrong: 0, total: 0, subject: p.subject }
+                  entry.total++
+                  if (p.result === 'correct') entry.correct++
+                  if (p.result === 'wrong') entry.wrong++
+                  chapterMap.set(key, entry)
+                }
+                const gaps = Array.from(chapterMap.entries())
+                  .map(([chapter, data]) => ({
+                    chapter,
+                    subject: data.subject,
+                    accuracy: data.total ? Math.round((data.correct / data.total) * 100) : 0,
+                    wrong: data.wrong,
+                    total: data.total,
+                  }))
+                  .filter((g) => g.wrong > 0)
+                  .sort((a, b) => a.accuracy - b.accuracy)
+
+                if (gaps.length === 0) {
+                  return <p className="py-4 text-center text-text3">No concept gaps — great performance!</p>
+                }
+
+                return (
+                  <div className="space-y-2">
+                    {gaps.slice(0, 6).map((g) => (
+                      <div key={g.chapter} className="flex items-center gap-3 text-xs">
+                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: subjectColor(g.subject) }} />
+                        <span className="w-36 truncate text-text2">{g.chapter}</span>
+                        <div className="flex-1">
+                          <div className="h-2 overflow-hidden rounded-full bg-surface3">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${g.accuracy}%`,
+                                backgroundColor: g.accuracy >= 70 ? '#10b981' : g.accuracy >= 40 ? '#6366f1' : '#ef4444',
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <span className="w-20 text-right font-mono text-text">{g.accuracy}%</span>
+                        <span className="w-16 text-right text-text3">{g.wrong}/{g.total} wrong</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
+            </div>
+          </Card>
+
           <Card>
             <CardHeader title="Accuracy Insight" subtitle="Estimated time is the ideal time for this question type" />
             <div className="space-y-2 px-5 pb-5 text-sm">
@@ -309,6 +366,7 @@ function ReviewSection({
             ) : (
               <p className="text-sm text-text3">No solution available.</p>
             )}
+            {q.solution?.detailedLatex?.map((l, i) => <Latex key={i} latex={l} display className="my-2 block" />)}
             {q.solution?.images?.length ? (
               <div className="mt-2 flex flex-wrap gap-2">
                 {q.solution.images.map((src, i) => (

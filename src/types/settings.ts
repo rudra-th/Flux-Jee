@@ -16,6 +16,10 @@ export interface UserSettings {
   reducedMotion: boolean
   /** Whether first-time onboarding shown */
   onboarded: boolean
+  /** Current onboarding step (0-4) for resume capability */
+  onboardingStep: number
+  /** Preferred subjects for personalization */
+  preferredSubjects: string[]
   offlineMode: boolean
 }
 
@@ -27,10 +31,12 @@ export const DEFAULT_SETTINGS: UserSettings = {
   showTimer: true,
   autoSubmit: true,
   dailyGoal: 30,
-  userName: 'Aspirant',
+  userName: '',
   examTarget: 'jee-main',
-  targetYear: new Date().getFullYear(),
+  targetYear: 2027,
   reducedMotion: false,
   onboarded: false,
+  onboardingStep: 0,
+  preferredSubjects: [],
   offlineMode: true,
 }

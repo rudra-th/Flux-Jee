@@ -25,33 +25,27 @@ const GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: 'Mock Tests',
+    items: [
+      { label: 'Test Series', path: '/mock-tests/main', icon: 'test', badge: 'New' },
+      { label: 'Previous Year Papers', path: '/practice/pyq', icon: 'pyq' },
+    ],
+  },
+  {
     title: 'Practice',
     items: [
-      { label: 'Full Test', path: '/test/full', icon: 'full' },
-      { label: 'Test Builder', path: '/test/custom', icon: 'custom' },
+      { label: 'Custom Test', path: '/test/custom', icon: 'custom' },
       { label: 'Chapter Tests', path: '/test/chapter', icon: 'chapter' },
-      { label: 'PYQ Papers', path: '/practice/pyq', icon: 'pyq' },
-      { label: 'Mixed Practice', path: '/practice/mixed', icon: 'mixed' },
-      { label: 'Daily Challenge', path: '/practice/daily', icon: 'daily', badge: 'New' },
-      { label: 'Adaptive Mode', path: '/practice/adaptive', icon: 'adaptive' },
-      { label: 'Speed Test', path: '/practice/speed', icon: 'speed' },
-      { label: 'Marathon', path: '/practice/marathon', icon: 'marathon' },
+      { label: 'Subject Tests', path: '/test/subject', icon: 'subject' },
+      { label: 'Daily Challenge', path: '/practice/daily', icon: 'daily', badge: 'Daily' },
     ],
   },
   {
-    title: 'Learn',
+    title: 'Review',
     items: [
-      { label: 'Question Bank', path: '/question-bank', icon: 'question' },
-      { label: 'Flashcards', path: '/flashcards', icon: 'flashcard' },
-      { label: 'Formula Revision', path: '/formulas', icon: 'formula' },
       { label: 'Mistake Notebook', path: '/mistakes', icon: 'mistake' },
       { label: 'Bookmarks', path: '/bookmarks', icon: 'bookmark' },
-    ],
-  },
-  {
-    title: 'Community',
-    items: [
-      { label: 'Leaderboard', path: '/leaderboard', icon: 'leaderboard' },
+      { label: 'Flashcards', path: '/flashcards', icon: 'flashcard' },
     ],
   },
 ]

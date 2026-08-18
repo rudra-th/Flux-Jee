@@ -17,7 +17,7 @@ export const TEST_MODES: TestModeMeta[] = [
   {
     id: 'full',
     name: 'Full Test',
-    description: 'Complete JEE Main mock with all sections and real NTA interface.',
+    description: 'Complete JEE mock with all sections and real NTA interface.',
     icon: 'full',
     path: '/test/full',
     color: '#4f8cff',
@@ -48,14 +48,6 @@ export const TEST_MODES: TestModeMeta[] = [
     color: '#f5a524',
   },
   {
-    id: 'topic',
-    name: 'Topic Test',
-    description: 'Drill down to a single micro-topic.',
-    icon: 'topic',
-    path: '/test/topic',
-    color: '#b06bf5',
-  },
-  {
     id: 'mixed-practice',
     name: 'Mixed Practice',
     description: 'Random questions across all subjects, quick practice session.',
@@ -73,30 +65,6 @@ export const TEST_MODES: TestModeMeta[] = [
     badge: 'Daily',
   },
   {
-    id: 'marathon',
-    name: 'Marathon Mode',
-    description: 'Extended sessions with many questions and long duration.',
-    icon: 'marathon',
-    path: '/practice/marathon',
-    color: '#dc2626',
-  },
-  {
-    id: 'speed',
-    name: 'Speed Test',
-    description: 'Solve as many as you can under extreme time pressure.',
-    icon: 'speed',
-    path: '/practice/speed',
-    color: '#eab308',
-  },
-  {
-    id: 'revision',
-    name: 'Revision Mode',
-    description: 'Quick re-attempt of past questions without time pressure.',
-    icon: 'revision',
-    path: '/practice/revision',
-    color: '#14b8a6',
-  },
-  {
     id: 'pyq',
     name: 'PYQ Mode',
     description: 'Solve real previous year questions filtered by year and shift.',
@@ -105,47 +73,12 @@ export const TEST_MODES: TestModeMeta[] = [
     color: '#3b82f6',
     badge: 'Real Papers',
   },
-  {
-    id: 'adaptive',
-    name: 'Adaptive Mode',
-    description: 'The engine analyzes your weakness and adjusts difficulty in real-time.',
-    icon: 'adaptive',
-    path: '/practice/adaptive',
-    color: '#8b5cf6',
-    badge: 'AI',
-  },
-  {
-    id: 'weak-chapter',
-    name: 'Weak Chapter Mode',
-    description: 'Auto-generated test from your weakest chapters.',
-    icon: 'weak',
-    path: '/practice/weak',
-    color: '#f43f5e',
-  },
-  {
-    id: 'wrong-questions',
-    name: 'Wrong Questions Mode',
-    description: 'Re-attempt all questions you got wrong across tests.',
-    icon: 'wrong',
-    path: '/practice/wrong',
-    color: '#ef4444',
-  },
-  {
-    id: 'bookmarked',
-    name: 'Bookmarked Questions',
-    description: 'Practice only the questions you have bookmarked.',
-    icon: 'bookmark',
-    path: '/practice/bookmarked',
-    color: '#f59e0b',
-  },
 ]
 
 /** Short URL path segments mapped to their canonical TestModeId. */
 const MODE_PATH_ALIASES: Record<string, TestModeId> = {
   mixed: 'mixed-practice',
   daily: 'daily-challenge',
-  weak: 'weak-chapter',
-  wrong: 'wrong-questions',
 }
 
 /** Resolve a URL path segment (e.g. "daily") into a valid TestModeId. */

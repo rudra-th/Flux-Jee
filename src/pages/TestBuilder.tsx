@@ -7,9 +7,7 @@ import { EXAMS } from '@/constants/exams'
 import { QUESTION_TYPES } from '@/constants/exams'
 import type { Difficulty, ExamId, QuestionTypeId, SubjectId } from '@/types/core'
 import type { TestModeId } from '@/types/core'
-import type { TestConfig } from '@/types/test'
 import { buildTest } from '@/engines/testBuilder'
-import { buildAdaptiveTest } from '@/engines/adaptive/engine'
 import { useTestStore } from '@/stores/testStore'
 import { useUIStore } from '@/stores/uiStore'
 import { cn } from '@/utils/cn'
@@ -45,10 +43,7 @@ interface BuilderState {
 function initialState(mode: TestModeId): BuilderState {
   const practiceExam =
     mode === 'chapter' ||
-    mode === 'topic' ||
-    mode === 'mixed-practice' ||
-    mode === 'revision' ||
-    mode === 'weak-chapter'
+    mode === 'mixed-practice'
   const allTypes: QuestionTypeId[] = [
     'single',
     'multiple',
@@ -68,12 +63,12 @@ function initialState(mode: TestModeId): BuilderState {
     selectedTopics: [],
     difficulties: [1, 2, 3, 4, 5],
     questionTypes: practiceExam ? allTypes : ['single', 'integer'],
-    totalQuestions: mode === 'daily-challenge' ? 10 : mode === 'marathon' ? 60 : mode === 'speed' ? 20 : 30,
-    timeLimitMinutes: mode === 'daily-challenge' ? 15 : mode === 'marathon' ? 120 : mode === 'speed' ? 10 : 180,
-    negativeMarking: mode !== 'revision',
+    totalQuestions: mode === 'daily-challenge' ? 10 : 30,
+    timeLimitMinutes: mode === 'daily-challenge' ? 15 : 180,
+    negativeMarking: true,
     shuffleQuestions: true,
     shuffleOptions: true,
-    allowPause: mode !== 'speed',
+    allowPause: true,
     years: [2019, 2020, 2021, 2022, 2023, 2024],
   }
 }
@@ -161,33 +156,28 @@ export default function TestBuilder() {
     }
     setBuilding(true)
     try {
-      let config: TestConfig
-      if (state.mode === 'adaptive') {
-        config = await buildAdaptiveTest(state.totalQuestions)
-      } else {
-        const chapterNames = state.selectedChapters
-          .map((id) => selectedSubject?.chapters.find((c) => c.id === id)?.name)
-          .filter(Boolean) as string[]
-        config = await buildTest({
-          name: state.name,
-          mode: state.mode,
-          exam: state.exam,
-          subjects: state.subjects,
-          chapters: chapterNames,
-          microTopics: state.selectedTopics,
-          difficulties: state.difficulties,
-          questionTypes: state.questionTypes,
-          totalQuestions: state.totalQuestions,
-          timeLimitSeconds: state.timeLimitMinutes * 60,
-          negativeMarking: state.negativeMarking,
-          shuffleQuestions: state.shuffleQuestions,
-          shuffleOptions: state.shuffleOptions,
-          allowPause: state.allowPause,
-          years: state.years,
-          autoSubmit: true,
-          seed: Date.now(),
-        })
-      }
+      const chapterNames = state.selectedChapters
+        .map((id) => selectedSubject?.chapters.find((c) => c.id === id)?.name)
+        .filter(Boolean) as string[]
+      const config = await buildTest({
+        name: state.name,
+        mode: state.mode,
+        exam: state.exam,
+        subjects: state.subjects,
+        chapters: chapterNames,
+        microTopics: state.selectedTopics,
+        difficulties: state.difficulties,
+        questionTypes: state.questionTypes,
+        totalQuestions: state.totalQuestions,
+        timeLimitSeconds: state.timeLimitMinutes * 60,
+        negativeMarking: state.negativeMarking,
+        shuffleQuestions: state.shuffleQuestions,
+        shuffleOptions: state.shuffleOptions,
+        allowPause: state.allowPause,
+        years: state.years,
+        autoSubmit: true,
+        seed: Date.now(),
+      })
       startTest(config)
       navigate(`/run/${config.id}`)
     } catch (err) {
@@ -199,14 +189,12 @@ export default function TestBuilder() {
 
   const quickPresets = [
     { mode: 'full' as const, label: 'Full Test', icon: 'full' as IconName },
-    { mode: 'subject' as const, label: 'Subject Test', icon: 'subject' as IconName },
+    { mode: 'custom' as const, label: 'Custom Test', icon: 'custom' as IconName },
     { mode: 'chapter' as const, label: 'Chapter Test', icon: 'chapter' as IconName },
-    { mode: 'topic' as const, label: 'Topic Test', icon: 'topic' as IconName },
+    { mode: 'subject' as const, label: 'Subject Test', icon: 'subject' as IconName },
     { mode: 'pyq' as const, label: 'PYQ Mode', icon: 'pyq' as IconName },
-    { mode: 'speed' as const, label: 'Speed Test', icon: 'speed' as IconName },
-    { mode: 'marathon' as const, label: 'Marathon', icon: 'marathon' as IconName },
-    { mode: 'revision' as const, label: 'Revision', icon: 'revision' as IconName },
-    { mode: 'adaptive' as const, label: 'Adaptive', icon: 'adaptive' as IconName },
+    { mode: 'mixed-practice' as const, label: 'Mixed Practice', icon: 'mixed' as IconName },
+    { mode: 'daily-challenge' as const, label: 'Daily Challenge', icon: 'daily' as IconName },
   ]
 
   const selectPreset = (m: TestModeId) => {

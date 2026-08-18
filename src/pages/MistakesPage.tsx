@@ -54,7 +54,7 @@ export default function MistakesPage() {
     try {
       const config = await buildTest({
         name: `Mistake Retry (${ids.length})`,
-        mode: 'revision',
+        mode: 'custom',
         exam: 'practice',
         subjects: ['physics', 'chemistry', 'mathematics'],
         onlyWrong: true,

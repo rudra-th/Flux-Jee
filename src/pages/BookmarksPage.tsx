@@ -41,7 +41,7 @@ export default function BookmarksPage() {
     try {
       const config = await buildTest({
         name: `Bookmark Practice (${qids.length})`,
-        mode: 'revision',
+        mode: 'custom',
         exam: 'practice',
         subjects: ['physics', 'chemistry', 'mathematics'],
         onlyBookmarked: true,

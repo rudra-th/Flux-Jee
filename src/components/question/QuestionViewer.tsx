@@ -108,6 +108,7 @@ export function QuestionViewer({
         <div className="rounded-lg border border-border bg-surface2/60 p-4">
           <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-text3">Comprehension</p>
           <RichText content={content.paragraph} paragraphs />
+          {content.paragraphLatex?.map((l, i) => <Latex key={i} latex={l} display className="my-2 block" />)}
         </div>
       )}
 
