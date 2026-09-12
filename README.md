@@ -1,32 +1,59 @@
-# React + TypeScript + Vite
+# FluxJEE
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+**The real JEE exam interface, minus the seat.**
 
-Currently, two official plugins are available:
+FluxJEE recreates the actual JEE exam interface as a mock-test platform. Instead of training on generic-looking quiz pages, you practice on the same layout, controls and timer behaviour you'd see in the real Centre — full-screen session, per-question navigation, and a clock that behaves like the paper one.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Live App
 
-## React Compiler
+**[fluxjee.vercel.app](https://fluxjee.vercel.app/)**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Features
 
-## Expanding the Oxlint configuration
+- **Faithful copy of the real exam interface** — instruction screens, question palette, submit flow
+- **Full-screen test environment** — distraction-free, timer-driven sessions
+- **Accurate exam-style timer** — behaves like the paper clock, with auto-submit on expiry
+- **Question-map navigation** — jump between questions, see attempted/skipped/marked status
+- **Practice mode** — chapter-wise and subject-wise drills from a large JEE question bank
+- **Adaptive engine** — questions weighted against your accuracy, attempts and weak chapters
+- **Daily challenge & weak-chapter builder** — auto-generated tests targeting your gaps
+- **Analytics** — accuracy, mistake tracking, bookmarks, flashcards and formula sheets
+- **Everything local** — progress, test history and bookmarks persist in your browser (IndexedDB); no account needed
+- **Optional AI tutor** — explain a question with your own Gemini key (BYOK) or a server-configured key
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Tech Stack
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+| Layer | Choice |
+| --- | --- |
+| Framework | React 19 + TypeScript |
+| Build | Vite |
+| Persistence | Dexie (IndexedDB) — no backend database |
+| AI endpoint | Serverless API (Gemini / Groq / OpenRouter, env-configured) |
+| Hosting | Vercel |
+
+## Running locally
+
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # production build to ./dist
+npm run preview  # preview the production build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Project structure
+
+```
+src/
+├── api/            # AI serverless endpoint client
+├── db/             # Dexie schema + seed imports
+├── engines/        # adaptive, analytics, flashcards, scoring, search, testBuilder
+├── pages/          # Practice, TestBuilder, TestRunner, TestResult, Analytics, ...
+├── components/     # question palette, timer, submit dialog, UI kit
+├── constants/      # exams, modes, syllabus
+└── stores/         # settings / test / UI state
+```
+
+## Notes
+
+- The AI assistant is optional. You can use your own Gemini key from **Settings → AI**; it is stored only in your browser.
+- All question data ships with the app — no external API is required for tests.
